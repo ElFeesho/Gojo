@@ -1,0 +1,303 @@
+Game.name = "IRC Example Bot"
+Game.author = "Feesh!" -- IRC isn't a game by the way, it's a way of life!
+
+Game.w = 640
+Game.h = 480
+
+Game.update_tick = 10
+Game.net = 1 -- Enable network libs
+Game.audio = 0
+require("modules/bfont")
+
+text_surf = nil
+buffer_surf = nil
+comic_fnt = nil
+owner_nick = "feesh"
+botnick = "Gojobot"
+server_address = "kornbluth.freenode.net"
+channel = "##scifi"
+passfile = Game.working_dir.."./../../../botpass.txt"
+password = nil
+irc_sock = nil
+irc_sock_set = nil
+
+cacr = nil
+
+acros = {}
+voted = {}
+votedfor = {}
+game_mode = 0
+
+voters = 0
+
+timeout = 0
+
+function on_init()
+	math.randomseed(os.time())
+	pass_handle = io.open(passfile)
+	if(pass_handle ~= nil) then
+		password = pass_handle:read()
+	end
+	print("Password: "..password)
+	comic_fnt = new_bfont("images/comicfont.png",8,14,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!\"$$%^&*()\\|/?:;''@#~[]{}}-_=+.,<>",1)
+	text_surf = SDL.surface_create(0,0,Game.w, Game.h)
+	buffer_surf = SDL.surface_create(0,0,Game.w, Game.h)
+	irc_sock = SDL.socket_tcp_connect(server_address, 6667)
+	local nick = "NICK "..botnick.."\r\n"
+	local pass = "PASS mrfeesh\r\n"
+	local user = "USER MrFeesh Localhost Remotehost :Mr The Feesh\r\n"
+	local join = "JOIN "..channel.."\r\n"
+	if(irc_sock~=false) then -- we connected!
+		print("Connected")
+		irc_sock:sendstring(nick)
+		irc_sock:sendstring(pass)
+		irc_sock:sendstring(user)
+		irc_sock:sendstring(join)
+		irc_sock:sendstring("PRIVMSG NickServ :identify "..password.."\r\n")
+		print("Sent login details")
+	end
+	irc_sock_set = SDL.socket_set_create(1) -- Only need room for one socket!
+	irc_sock_set:tcp_add(irc_sock) -- Monitor irc_sock for incoming data
+end
+
+function on_update()
+	SDL.draw_rect(0,0,Game.w, Game.h,"black")
+	-- Check for incoming data and read it in
+	local amount = SDL.socket_set_check(irc_sock_set, 100) -- Find out how many sockets are ready for reading (in this case it'll only ever be 1), wait 0 ms for data!
+	if(amount>0) then
+		if(irc_sock:ready()) then
+			local data = ""
+			data = irc_sock:readline()
+			if(is_ping(data)) then
+				send_pong(data)
+			elseif(is_chanmsg(data)) then
+				nick, message = parse_chanmsg(data)
+				print_text("<"..nick.."> "..message)
+				if(nick == owner_nick) then
+					if(message == "!quit") then
+						send_quit("Viva la Centrifusion!")
+					end
+				end
+			elseif(is_join(data)) then
+				who = parse_join(data)
+				print_text("* "..who.." joins the channel *")
+			elseif(is_part(data)) then
+				who, where, why = parse_part(data)
+				print_text("* "..who.." left "..where.." - "..why.." *")
+			elseif(is_numeric(data)) then
+				num, data = parse_numeric(data)
+--				print_text("Got Numeric: "..num.." Data: "..data)
+			elseif(is_notice(data)) then
+				from, to, data = parse_notice(data)
+				print_text("== NOTICE == "..from.." - "..data)
+			elseif(is_privmsg(data)) then
+				from, message = parse_privmsg(data)
+				print_text(">"..from.."< "..message)
+				if(from:lower()=="hrist" or from:lower()=="akasha") then
+					send_msg("Play a game? Surely not you :-)",from)
+				elseif(game_mode == 0) then
+					if(from == owner_nick) then
+						if(message == "start") then
+							len = math.random(3,5)
+							cacr = ""
+							for i=1,len do
+								cacr = cacr..string.char(math.random(65,90))
+							end
+							acros = {} -- love thy GC
+							voted = {}
+							votedfor = {}
+							voters = 0
+							send_msg("The game is on chumps! - the acronym is "..cacr.." - no bitching about it being too hard! PM me your entrant. (60secs)")
+							timeout = SDL.get_ticks()+60000
+							game_mode = 1
+						end
+					end
+				elseif(game_mode == 1) then -- 1 = receiving acronyms
+					if(voted[from]==nil) then
+						voted[from] = 1
+						acros[voters] = {}
+						acros[voters].id = from
+						acros[voters].acronym = message -- Add in checks to make sure it matches the acronym
+						acros[voters].votes = 0
+						print("ADDED ACRONYM FROM "..from.." ID: "..voters.." ACRO: "..message)
+						voters = voters + 1
+						if(voters == 4) then
+							timeout = 0
+						end
+					else
+						send_msg("You've already submitted an acronym you douche",from)
+					end
+				elseif(game_mode == 2) then 
+					if(tonumber(message)==nil) then
+						send_msg("It's voting time, I'm looking for a number... douche", from)
+					elseif (tonumber(message)>#acros+1 or tonumber(message)<1) then
+						send_msg("Look closely at the vote table",from)
+					else
+						if(votedfor[from]==nil) then
+							acros[tonumber(message)-1].votes = acros[tonumber(message)-1].votes+1
+							send_msg("You voted for "..acros[tonumber(message)-1].id, from)
+							votedfor[from] = 1
+						else
+							send_msg("You've already voted once, don't push your luck", from)
+						end
+					end
+				end
+			else
+				data = data:sub(1,-3) -- remove those pesky new line characters
+				print_text(data)
+			end
+		end
+	end
+	text_surf:blit()
+	if(SDL.get_ticks()>timeout) then
+		if(game_mode == 1) then
+			if(voters>0) then
+				game_mode = 2
+				send_msg("Entry is now closed! Time for voting (30secs)")
+				for i = 0, voters-1 do
+					send_msg("PM "..(i+1).." for "..acros[i].acronym)
+				end			
+				timeout = SDL.get_ticks()+30000
+			else
+				game_mode = 0
+				send_msg("What a bunch of fun you people are, geez (no voters...)")
+			end
+		elseif(game_mode == 2) then
+			game_mode = 0
+			winid = 0
+			most_votes = 0
+			for i = 0, voters-1 do
+				if(acros[i].votes > most_votes) then
+					winid = i
+					most_votes = acros[i].votes
+				end
+			end
+			send_msg(acros[winid].id.." won with "..acros[winid].acronym.." (votes: "..most_votes..")")
+		end
+	end
+end
+
+function print_text(text)
+	new_surf = comic_fnt:text_create_wrapped(0,0,Game.w/8-1, text)
+	buffer_surf:fill(0,0,Game.w, Game.h, "black")
+	text_surf:blit(0,new_surf.h,0,1.0,buffer_surf)
+	new_surf:blit(0,0,0,1.0,buffer_surf)
+	buffer_surf:blit(text_surf)
+	new_surf:destroy()
+end
+
+function is_ping(text)
+	if(text:match("PING :.+")~=nil) then
+		return true
+	end
+	return false
+end
+
+function is_join(text)
+	if(text:match(":%S+!.+@.+ JOIN :.+")~=nil) then
+		return true
+	end
+	return false
+end
+
+function is_part(text)
+	if(text:match(":%S+!.+@.+ PART .+ :.+")~=nil) then
+		return true
+	end
+	return false
+end
+
+function is_chanmsg(text)
+	if(text:match(":%S+!*%S+ PRIVMSG "..channel.." :%S+")~=nil) then
+		return true
+	end
+	return false
+end
+
+function is_privmsg(text)
+	if(text:match(":%S+!%S+ PRIVMSG %S+ :%S+")~=nil) then
+		to = text:match(":%S+!%S+ PRIVMSG (%S+) :%S+")
+		if(to:lower() == botnick:lower()) then
+			return true
+		else
+			return false -- Probably a message to the channel instead
+		end
+	end
+	return false
+end
+
+function is_notice(text)
+	if(text:match(":%S+!%S+ NOTICE %S+ :.+")~=nil) then
+		return true
+	else
+		return false
+	end
+end
+
+function is_numeric(text) -- IRC server's send clients numeric responses for some things
+	if(text:match(":"..server_address.." %d+ .+")~=nil) then
+		return true
+	else
+		return false
+	end
+end
+
+function send_pong(text)
+	response = text:match("PING :(.+)")
+	response = response:sub(1,-3)
+	irc_sock:sendstring("PONG :"..response.."\r\n")
+end
+
+function send_msg(text, to)
+	if(to~=nil) then
+		irc_sock:sendstring("PRIVMSG "..to.." :"..text.."\r\n")
+	else
+		irc_sock:sendstring("PRIVMSG "..channel.." :"..text.."\r\n")
+	end
+end
+
+function send_quit(text)
+	irc_sock:sendstring("QUIT :"..text.."\r\n")
+	irc_sock:close()
+	irc_sock_set:tcp_remove(irc_sock)
+	SDL.quit()
+end
+
+function parse_chanmsg(text)
+	nick, message = text:match(":(%S+)!%S+ PRIVMSG "..channel.." :(.+)")
+	message = message:sub(1, -3) -- those damn line breaks!
+	return nick, message
+end
+
+function parse_privmsg(text)
+	from, message = text:match(":(%S+)!%S+ PRIVMSG %S+ :(.+)")
+	message = message:sub(1,-3)
+	return from, message
+end
+
+function parse_numeric(text) -- IRC server's send clients numeric responses for some things
+	if(text:match(":"..server_address.." %d+ .+")~=nil) then
+		num, data = text:match(":"..server_address.." (%d+) (.+)")
+		data = data:sub(1, -3) -- LINE FEEDS!!! ARGG
+		return num, data
+	else
+		return nil
+	end
+end
+
+function parse_notice(text)
+	from, to, data = text:match(":(%S+)!%S+ NOTICE (%S+) :(.+)")
+	data = data:sub(1,-3)
+	return from, to, data
+end
+
+function parse_join(text)
+	who = text:match(":(%S+)!.+@.+ JOIN :.+")
+	return who
+end
+
+function parse_part(text)
+	who, from, msg = text:match(":(%S+)!.+@.+ PART (.+) :(.+)")
+	msg = msg:sub(1,-3)
+	return who, from, msg
+end

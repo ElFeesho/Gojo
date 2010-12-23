@@ -1,0 +1,155 @@
+function new_tilemap(map_filename, colourkey)
+	tilemap =
+	{
+		map = nil,
+		cmap = nil,
+		canvas = nil, -- THE MAIN SURFACE!!! Everything is composed on top of this!
+		tilew = 0,
+		tileh = 0,
+		cx = 0, -- Camera X
+		cy = 0, -- Camery Y
+		w = 0,
+		h = 0,
+		tileset = nil,
+		colset = nil,
+		initd = false,
+		layers = {},
+		colkey = "#ff00ff",
+		init =
+		function(self, colourkey)
+			if(colourkey~=nil) then
+				self.colkey = colourkey
+			end
+			local map_file = io.open(Game.working_dir..map_filename)
+			if(map_file==nil) then
+				SDL.send_fatal_error("Failed to load map "..map_filename)
+				return
+			end
+			local stages = 0
+			while (not initd) do
+				local cur_line = map_file:read()
+				if(string.match(cur_line, "tileset:%s*%S+")~=nil) then -- Found the tileset line
+					self.tileset = SDL.surface_load(string.match(cur_line,"tileset:%s*(%S+)"))
+					if(self.tileset == nil) then
+						SDL.send_fatal_error("Failed to load tileset: "..string.match(cur_line,"tileset:%s*(%S+)"))
+						return
+					end
+					stages = stages + 1
+				elseif(string.match(cur_line, "colset:%s*%S+")~=nil) then -- Found the collision set line
+					self.colset = SDL.surface_load(string.match(cur_line,"colset:%s*(%S+)"))
+					if(self.colset == nil) then
+						SDL.send_fatal_error("Failed to load colision set")
+						return
+					end
+					stages = stages + 1
+				elseif(string.match(cur_line, "tile width:%s*%S+")~=nil) then -- Found the tile's width line
+					self.tilew = math.floor(tonumber(string.match(cur_line,"tile width:%s*(%S+)")))
+					stages = stages + 1
+				elseif(string.match(cur_line, "tile height:%s*%S+")~=nil) then -- Found the tile's height line
+					self.tileh = math.floor(tonumber(string.match(cur_line,"tile height:%s*(%S+)")))
+					stages = stages + 1
+				elseif(string.match(cur_line, "map width:%s*%S+")~=nil) then -- Found the tile's height line
+					self.w = math.floor(tonumber(string.match(cur_line,"map width:%s*(%S+)")))
+					stages = stages + 1
+				elseif(string.match(cur_line, "map height:%s*%S+")~=nil) then -- Found the tile's height line
+					self.h = math.floor(tonumber(string.match(cur_line,"map height:%s*(%S+)")))
+					stages = stages + 1
+				end
+				if(stages == 6) then
+					initd = true
+				end
+			end
+			local cur_layer = 0
+			local cur_layer_line = 0
+			local cur_line = 0
+			self.canvas = SDL.surface_create(0,0,self.w*self.tilew,self.h*self.tileh,self.colkey)
+			self.layers[0] = SDL.surface_create(0,0,self.w*self.tilew,self.h*self.tileh,self.colkey)
+			self.cmap = SDL.surface_create(0,0,self.w*self.tilew,self.h*self.tileh)
+			for line in map_file:lines() do 
+				if(string.len(line)/2 == self.w and string.byte(line) ~= '#') then -- not a Spacer line / comment line
+					if(math.mod(string.len(line),2)~=0) then
+						SDL.send_error("Map file error, a line of tile data isn't even! - it's odd")
+					end
+					if(cur_line>=self.h) then
+						cur_line = 0
+						cur_layer = cur_layer + 1
+						cur_layer_line = 0
+						self.layers[cur_layer] = SDL.surface_create(0,0, self.w*self.tilew,self.h*self.tileh, self.colkey)
+					end
+					for j = 0,self.w-1,1 do
+						local ctilex = (string.byte(line, (j*2)+1)-65)*self.tilew
+						local ctiley = (string.byte(line, (j*2)+2)-65)*self.tileh
+						self.tileset:blit_area(ctilex,ctiley,self.tilew,self.tileh,j*self.tilew,self.tileh*cur_layer_line,self.layers[cur_layer])
+						if(cur_layer == 0) then
+			   			self.colset:blit_area(ctilex,ctiley,self.tilew,self.tileh,j*self.tilew,cur_layer_line*self.tileh,self.cmap)
+						end
+					end
+					cur_line = cur_line+1
+					cur_layer_line = cur_layer_line + 1
+				end
+			end
+		end,
+		coliding = function(self, x, y)
+			if(y<self.cmap.h) then
+				if(self.cmap:get_pixel(x, y) > 0) then
+					return true
+				else
+					return false	
+				end
+			else
+				return false
+			end
+		end,
+		clear_canvas = function(self)
+			self.canvas:fill(0,0,self.canvas.w, self.canvas.h, self.colkey)
+		end,
+		get_canvas = function(self)
+			return self.canvas
+		end,
+		draw_to = 
+		function(self, layernum)
+			if(layernum == nil) then 
+				layernum = 0 
+			end
+			for i = 0, layernum, 1 do
+				if(self.layers[layernum]~=nil) then
+					self.layers[layernum]:blit_area(self.cx,self.cy,Game.w, Game.h, self.cx, self.cy, self.canvas)
+				else
+					return
+				end
+			end
+		end,
+		draw_from = 
+		function(self, layernum)
+			if(layernum == nil) then 
+				layernum = 0 
+			end
+			for i = layernum, #self.layers, 1 do
+				if(self.layers[layernum]~=nil) then
+					self.layers[layernum]:blit_area(self.cx,self.cy,Game.w, Game.h, self.cx, self.cy, self.canvas)
+				else
+					return
+				end
+			end
+		end,
+		draw = function(self)
+			self.canvas:blit_area(self.cx, self.cy, Game.w, Game.h, 0, 0)
+		end,
+		focus_to = function(self, x, y)
+			self.cx = x - Game.w/2
+			self.cy = y - Game.w/2
+			if(self.cx < 0) then
+				self.cx = 0
+			elseif(self.cx>self.w*self.tilew-Game.w) then
+				self.cx = self.w*self.tilew-Game.w
+			end
+			if(self.cy < 0) then
+				self.cy = 0
+			elseif(self.cy>self.h*self.tileh-Game.h) then
+				self.cy = self.h*self.tileh-Game.h
+			end
+		end
+	}
+	tilemap:init(colourkey)
+	return tilemap
+end

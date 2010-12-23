@@ -1,0 +1,59 @@
+Game.name = "Update Tick Changer"
+Game.author = "Feesh"
+Game.w = 640
+Game.h = 480
+Game.update_tick = 20
+
+ball = {}
+ball.x = 240
+ball.y = 0
+ball.yspeed = 5
+ball.xspeed = 5
+
+sticks = 20
+
+function on_init()
+
+end
+
+function on_update(ticks)
+	SDL.draw_rect(0, 0, Game.w, Game.h, "black")
+	SDL.draw_rect(ball.x, ball.y, 32, 32, "blue")
+	ball.x = ball.x + ball.xspeed
+	ball.y = ball.y + ball.yspeed
+	
+	if ball.x > Game.w-32 then
+		ball.x = Game.w-32
+		ball.xspeed = ball.xspeed * -1
+	elseif ball.x < 0 then
+		ball.x = 0
+		ball.xspeed = ball.xspeed * -1
+	end
+	if ball.y > Game.h-32 then
+		ball.y = Game.h-32
+		ball.yspeed = ball.yspeed * -1
+	elseif ball.y < 0 then
+		ball.y = 0
+		ball.yspeed = ball.yspeed * -1
+	end
+	if(SDL.get_key(275)) then
+		sticks = sticks + 1
+		SDL.set_ticks(sticks)
+		print("Set ticks to "..sticks)
+	end
+	if(SDL.get_key(276)) then
+		sticks = sticks - 1
+		SDL.set_ticks(sticks)
+		print("Set ticks to "..sticks)
+	end
+	clet = SDL.get_key()
+	if(clet~=false) then
+		print(string.char(clet))
+	end
+	-- Oh dear god no
+--	for i =0, 255, 1 do
+--		if(SDL.get_key(i)) then
+--			print(string.char(i))
+--		end
+--	end
+end

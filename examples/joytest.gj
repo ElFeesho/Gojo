@@ -1,0 +1,51 @@
+Game.name = "Joystick Test"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+
+Game.update_tick = 20
+
+test_stat = 0
+
+bitmap_font = nil
+
+require("modules/bfont")
+
+function on_init()
+	bitmap_font = new_bfont("images/bmpfont.png",11, 18, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",2)
+	if(SDL.get_joy_count() == 0) then
+		bitmap_font:text_draw(20, Game.h/2-9, "You need to have at least 1 joystick plugged in for this test")
+		return
+	end
+	for i = 0, SDL.get_joy_count()-1, 1 do
+			print("Joystick: "..i.." Has "..SDL.get_joy_axis_count(i).." axis, and "..SDL.get_joy_button_count(i).." buttons")
+	end
+	test_stat = 1
+end
+
+function on_update()
+	if(SDL.get_key(27)==1) then
+		SDL.quit()
+	end
+	if(test_stat == 0) then
+		return
+	end
+	for i = 0, SDL.get_joy_count()-1, 1 do
+		bitmap_font:text_draw(i*120+20, 20, "Joy "..i+1)
+		local ax_count = SDL.get_joy_axis_count(i)
+		for j = 0, ax_count-1, 2 do
+			SDL.draw_rect((i*120+25),(j*30+45),49,49,"green")
+			SDL.draw_rect((i*120+45)+(20*(SDL.get_joy_axis(j,i)/100)),(j*30+65)+(20*(SDL.get_joy_axis(j+1,i)/100)),10,10,"black")
+		end
+
+		button_offset = (ax_count+math.mod(ax_count,2))/2 * 60
+		for k = 0, SDL.get_joy_button_count(i)-1, 1 do
+			if(SDL.get_joy_button(k,i) == 1) then
+				SDL.draw_rect(i*120+25 + (math.floor(k/6)*30),button_offset + 50 + (30*(k-math.floor(k/6)*6)), 20, 20, "green", "green")
+			else
+				SDL.draw_rect(i*120+25 + (math.floor(k/6)*30),button_offset + 50 + (30*(k-math.floor(k/6)*6)), 20, 20, "black", "green")
+			end
+		end
+	end
+end

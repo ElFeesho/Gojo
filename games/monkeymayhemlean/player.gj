@@ -1,0 +1,121 @@
+function new_player()
+	local player=
+	{
+		sprites={},
+		x=32,
+		y=380,
+		xspeed=0,
+		yspeed=0,
+		dir=1,
+		jumped=0,
+		onGround=0,
+		isWalking=0,
+		gravity=0.8,
+		init=function(self)
+			self.sprites[0]=new_sprite("sprites/player/lstand.spr")
+			self.sprites[1]=new_sprite("sprites/player/lwalk.spr")
+			self.sprites[2]=new_sprite("sprites/player/rstand.spr")
+			self.sprites[3]=new_sprite("sprites/player/rwalk.spr")
+		end,
+		update=function(self)			
+			if(SDL.get_key(32) and self.onGround==1 and self.jumped==0)then
+				self.onGround=0
+				self.yspeed=-30
+				self.jumped=1
+			end
+			if(self.onGround==1 and not SDL.get_key(32))then
+				self.jumped=0
+			end
+			if(SDL.get_key(275))then
+				self.dir=1
+				self.isWalking=1
+			elseif(SDL.get_key(276))then
+				self.dir=0
+				self.isWalking=1
+			else
+				self.isWalking=0
+			end
+			if(self.isWalking==1)then
+				if(self.dir==1)then
+					if(self.xspeed<5)then
+						self.xspeed=self.xspeed+(0.5+(self.onGround*0.25))
+						if(self.xspeed>5)then
+							self.xspeed=5
+						end
+					end
+				else
+					if(self.xspeed>-5 and self.dir==0)then
+						self.xspeed=self.xspeed -(0.5+(self.onGround*0.25))
+						if(self.xspeed<-5)then
+							self.xspeed=-5
+						end
+					end
+				end
+			elseif(self.onGround==1)then
+				if(self.xspeed>0)then
+					self.xspeed=self.xspeed -0.35
+				else
+					self.xspeed=self.xspeed+0.35
+				end
+				if(self.xspeed<0.5 and self.xspeed>-0.5)then
+					self.xspeed=0
+				end
+			end
+			if(self.yspeed<7 and self.onGround ==0)then
+				if(self.yspeed<0)then
+					self.yspeed=self.yspeed*self.gravity+0.2
+				else
+					self.yspeed=self.yspeed/self.gravity+0.2
+				end
+			end
+			if(self.onGround==1)then
+				if(not globals.cs.map:coliding(self.x+11,self.y+48) and not globals.cs.map:coliding(self.x+36,self.y+48))then
+					self.onGround=0
+					self.yspeed=0
+					self.y=math.floor(self.y/24)*24
+				end
+			end
+			lbx = self.x+13
+			rbx = self.x+34
+			if(self.onGround==0 and self.yspeed>0)then
+				cty=math.floor((self.y+self.yspeed+48)/24)*24
+				if(globals.cs.map:coliding(lbx,cty) or globals.cs.map:coliding(rbx,cty))then
+					if(math.floor(self.y+48)<=cty)then
+						self.onGround=1
+						self.yspeed=0
+						self.y=cty-48
+					end
+				end
+			elseif(self.onGround==0 and self.yspeed<0)then
+				cty=math.floor((self.y+self.yspeed)/24)*24
+				if(globals.cs.map:coliding(lbx,cty) or globals.cs.map:coliding(rbx,cty))then
+					if(math.floor(self.y) >= cty)then
+						self.yspeed=1
+						self.y=cty+24
+					end
+				end
+			end
+			if(self.xspeed>0 and (globals.cs.map:coliding(rbx+1+self.xspeed,self.y) or globals.cs.map:coliding(rbx+1+self.xspeed,self.y+24) or globals.cs.map:coliding(rbx+1+self.xspeed,self.y+47)))then
+				self.x=self.x+(math.floor((self.x+35+self.xspeed)/24)*24-self.x)-35
+				self.xspeed=0
+				self.isWalking=0
+			elseif(self.xspeed<0 and (globals.cs.map:coliding(lbx-1+self.xspeed,self.y) or globals.cs.map:coliding(lbx-1+self.xspeed,self.y+24) or globals.cs.map:coliding(lbx-1+self.xspeed,self.y+47)))then
+				self.x=self.x+(math.floor((self.x+12+self.xspeed)/24)*24-self.x)+12
+				self.xspeed=0
+				self.isWalking=0
+			end
+			self.x=self.x+self.xspeed
+			if(self.x<0)then
+				self.x=0
+			elseif(self.x+48>globals.cs.map.layers[0].w)then
+				self.x=globals.cs.map.layers[0].w-48
+			end
+			if(self.onGround==0)then
+				self.y=self.y+self.yspeed
+			end
+			self.sprites[self.dir*2+self.isWalking]:draw_and_update(self.x,self.y,globals.cs.map:get_canvas())
+		end
+	}
+	player:init()
+	return player
+end

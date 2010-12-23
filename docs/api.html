@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<link type="text/css" rel="stylesheet" href="style.css">
+		<title>
+			Gojo Documentation
+		</title>
+	</head>
+	<body>
+		<h1>Gojo Documentation - 5. API</h1>
+		<hr>
+		<p>
+			Gojo has it's own extendable API, though manually extending the API 
+			provided is possible, it may be better to extend functionality from 
+			within a script rather than altering the Gojo's source, as cross compatability
+			will be lost on other platforms which haven't received the new updates.
+		</p>
+		<h3>Surface Manipulation</h3>
+		<code>surface_load(image filename [, initial x, initial y])</code> <span>- Returns an 'image' table</span>
+		<p class="explanation">
+			Loads 'image filename' and optionally sets the x and y position to
+			an initial x and initial y value.
+		</p>
+		<code>surface_create(x, y, width, height)</code> <span>- Returns an 'image' table</span>
+		<p class="explanation">
+			Creates a blank surface that will be as wide as 'width' and as tall as 
+			'height'. It's position will be 'x' and 'y'.
+		</p>
+		<code>surface_blit(an 'image' table)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Blits a loaded or created surface onto the screen at it's x and y position. 
+			If the image table's alpha value has been altered, the surface's alpha will
+			change accordingly (255 is opaque and 0 is transparent).
+		</p>
+		<p class="explanation">
+			Depending on whether Gojo was built to utilise <b>SDL_gfx</b>, if the image table's
+			<i>rot</i> or <i>scale</i> values have been altered, the surface will be blitted
+			at the angle set in the table and scaled respectively based on the factor set in
+			the table. 
+		</p>
+		<code>surface_blit_area(an 'image' table, source x, source y, width, height, destination x, destination y)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Blits the area defined by source x, source y, source width and source height on to the screen at destination x and y.
+		</p>
+		<code>surface_get_pixel(an 'image' table, x coordinate, y coordinate)</code> <span>- Returns an integer</span>
+		<p class="explanation">
+			Checks the pixel at (x, y) on the surface of the image table passed in 
+			and returns a value based on the pixels contents.
+		</p>
+		<code>surface_destroy(an 'image' table)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Frees up the surface reffered to by image table. Image tables contents 
+			remain intact, but trying to blit the surface will lead to an error.
+		</p>
+		<p class="explanation">
+			Images with freed surfaces are useless and should be made nil.
+		</p>
+		<h3>Drawing Operations</h3>
+		<code>draw_rect(x coordinate, y coordinate, width, height, colour [, border colour])</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Draws a rectangle at x and y, as wide as width and as tall as height. 
+			The colour parameter specifies the fill colour. Optionally the rectangle
+			may have a border which can be set with border colour.
+		</p>
+		<code>draw_line(x coordinate, y coordinate, x2 coordinate, y2 coordinate, colour)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Draws a line from point (x, y) to point (x2, y2) in the specified colour.
+		</p>
+		<h3>Text Manipulation - Dependent on SDL_ttf</h3>
+		<code>text_load(True Type Font filename, Size in PT)</code> <span>- Returns a userdata value</span>
+		<p class="explanation">
+			Loads a font file which can be used in other text functions. This function 
+			does not scan system font files, so the font file must be in relative 
+			directory format. <b>E.g. if the font was in the same directory as the game
+			you would use "./font-name.ttf".</b>
+		</p>
+		<code>text_draw(x coordinate, y coordinate, font userdata, colour, Text)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Draws text at x and y coordinates using a font loaded with text_load. The text
+			will be in the colour passed in. This function is useful for drawing texts
+			which may vary often.
+		</p>
+		<code>text_create(x coordinate, y coordinate, font userdata, colour, Text)</code> <span>- Returns an 'image' table</span>
+		<p class="explanation">
+			Creates an 'image' table that can be used with <b>surface_blit</b> or <b>surface_blit_area</b>.
+			This function is useful for creating text which will not change through out it's lifetime, e.g. 
+			title text, menu texts etc.
+		</p>
+		<code>text_destroy(font userdata)</code> <span>- Returns nil</span>
+		<p class="explanation">
+			Destroys an allocated font, <b>NOT</b> a surface created with <b>text_create</b>. Use
+			<b>surface_destroy</b> to free a surface created with <b>text_create</b>.
+		</p>
+		<h3>Music and Sound manipulation - Dependent on SDL_mixer</h3>
+		<hr>
+		<span>Last Updated: 2007/12/02</span> - <span>Copyright Christopher Sawczuk &copy; 2007</span>
+	</body>
+</html>

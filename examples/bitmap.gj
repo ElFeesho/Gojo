@@ -1,0 +1,39 @@
+-- BITMAP FONTING :O OMTG!
+Game.w = 720
+Game.h = 512
+Game.name = "Bitmap Fonts"
+Game.author = "Feesh!"
+Game.audio = 1
+Game.update_tick = 100
+
+require("modules/bfont")
+font_creator = nil
+result_surf = nil
+
+test_case = "This is a test of a really long string that needs to be wrapped at least 2 or 3 times\nAnd it doesnt\nstop\nthere either"
+wrap_width = 20
+
+function on_init()	
+	font_creator = new_bfont("images/bmpfont.png",11,18,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-",1)
+	result_surf = font_creator:text_create_wrapped(0,0, 20, test_case)
+	collectgarbage("collect")
+end
+
+function on_update()
+	SDL.draw_rect(0,0,Game.w, Game.h, "black")
+	result_surf:blit()
+	font_creator:text_draw(0,Game.h-32,"Wrapping at "..wrap_width.." chars")
+	if(SDL.get_key(276) and wrap_width>5) then
+		result_surf:destroy()
+		wrap_width = wrap_width - 1
+		result_surf = font_creator:text_create_wrapped(0,0,wrap_width, test_case)
+	end
+	if(SDL.get_key(275) and wrap_width<50) then
+		result_surf:destroy()
+		wrap_width = wrap_width + 1
+		result_surf = font_creator:text_create_wrapped(0,0,wrap_width, test_case)
+	end
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+end

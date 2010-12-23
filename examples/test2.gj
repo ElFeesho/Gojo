@@ -1,0 +1,30 @@
+Game.name = "Test block"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+
+Game.update_tick = 1000/2 -- TWO FRAMES A SECOND BABY!!!
+
+Game.bpp = 16 -- Bits per pixel
+Game.fullscreen = 0 -- Not fullscreen
+
+-- A global
+
+pos = 0
+
+function on_init()
+-- nothing in here :(
+end
+
+function on_update(ticks) -- Ticks is passed in from gojo (it's how long the app has been alive
+   -- Clear screen (not really needed)
+   SDL.draw_rect(0,0,Game.w, Game.h, "white")
+   if (pos == 0) then
+    --SDL.draw_rect(x_position, yposition, width, height, colour)
+      SDL.draw_rect(Game.w/2-50,Game.h/2-50,100,100,"#ff00ff")
+   else
+      SDL.draw_rect(Game.w/2-50,Game.h/2-50,100,100,"#ffff00")
+   end
+   pos = 1 - pos
+end

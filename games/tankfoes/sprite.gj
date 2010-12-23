@@ -1,0 +1,88 @@
+function new_sprite()
+	sprite =
+	{
+		sprites = {},
+		current_frame = 0,
+		total_frames = 0,
+		last_time = 0,
+		rot = 0.0,
+		scale = 1.0,
+		x = 0,
+		y = 0,
+		time_factor = 1.0,
+		load_sprite = 
+		function (self,folder, action, images)
+			local sfile = io.open(Game.working_dir..folder.."/"..action..".spr")
+			self.last_time = SDL.get_ticks()
+			for count=0, images-1, 1 do
+				self.sprites[count] = SDL.surface_load(folder.."/"..action..count..".png")
+				if(sfile~=nil) then
+					self.sprites[count].delay = sfile:read("*n")
+				else
+					self.sprites[count].delay = 500
+				end
+			end
+			self.total_frames = images
+		end,
+		reset_sprite =
+		function (self)
+			self.current_frame = 0
+			self.last_time = SDL.get_ticks()
+		end,
+		draw =
+		function (self)
+			self.sprites[self.current_frame].x = self.x
+			self.sprites[self.current_frame].y = self.y
+			self.sprites[self.current_frame].scale = self.scale
+			self.sprites[self.current_frame].rot = self.rot
+			self.sprites[self.current_frame]:blit()
+		end,
+		update =
+		function (self, x, y)
+			if(x~=nil) then
+				self.x = x
+			end
+			if(y~=nil) then
+				self.y = y
+			end
+			if(SDL.get_ticks()>self.last_time+self.sprites[self.current_frame].delay*self.time_factor) then
+				if(self.current_frame+1<self.total_frames) then
+					self.current_frame = self.current_frame + 1
+					self.last_time = SDL.get_ticks()
+				else
+					self.current_frame = 0
+					self.last_time = SDL.get_ticks()
+				end
+			end
+		end,
+		draw_and_update =
+		function (self, x, y)
+			self:update(x, y)
+			self:draw()
+		end,
+		set_rotate = 
+		function(self, new_rot)
+			self.rot = new_rot
+		end,
+		set_scale =
+		function(self, new_scale)
+			self.scale = new_scale
+		end,
+		set_time_factor =
+		function(self, new_factor)
+			if(new_factor>=1.0) then
+				self.time_factor = new_factor
+			end
+		end,
+		move_x = 
+		function(self, x)
+			self.x = x
+		end,
+		move_y = 
+		function(self, y)
+			self.y = y
+		end
+	}
+	return sprite
+end
+

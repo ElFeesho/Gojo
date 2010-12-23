@@ -1,0 +1,5 @@
+globals =
+{
+	current_scene = nil,
+	player = nil
+}

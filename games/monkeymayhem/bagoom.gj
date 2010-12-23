@@ -1,0 +1,112 @@
+function new_bagoom(xpos, ypos, ents)
+	local bagoom = 
+	{
+		sprites = {},
+		other_ents = ents,
+		x = xpos,
+		y = ypos,
+		xspeed = -1.2,
+		yspeed = 1,
+		onGround = 0,
+		gravity = 0.8,
+		active = false,
+		alive = true,
+		killtime = 0,
+		csprite = 0,
+		init = function(self, nents)
+			self.sprites[0] = new_sprite("sprites/enemies/bagoom/bagoom.spr")
+			self.sprites[1] = new_sprite("sprites/enemies/bagoom/bagoomdead.spr")
+			self.other_ents = nents
+		end,
+		update = function(self)
+			if(not self.active) then
+				return true
+			end
+			if(self.alive) then
+				if(self.yspeed<7 and self.onGround ==0) then
+					if(self.yspeed<0) then
+						self.yspeed = self.yspeed*self.gravity+0.2
+					else
+						self.yspeed = self.yspeed/self.gravity+0.2
+					end
+				end
+
+				gridy = math.floor(self.y/24)*24
+				
+				if(self.onGround == 1) then
+					if(not globals.current_scene.map:coliding(self.x+24+self.xspeed,self.y+24) and not globals.current_scene.map:coliding(self.x+self.xspeed,self.y+24)) then
+						self.onGround = 0
+						self.yspeed = 0
+						self.y = gridy
+					end
+				end
+				if(self.onGround == 0 and self.yspeed>0) then -- Falling off a ledge
+					coltiley = math.floor((self.y+self.yspeed+24)/24)*24
+					if(globals.current_scene.map:coliding(self.x+self.xspeed,coltiley) or globals.current_scene.map:coliding(self.x+24+self.xspeed,coltiley)) then
+						if(math.floor(self.y+24) <= coltiley) then
+							self.onGround = 1
+							self.yspeed = 0
+							self.y = coltiley-24
+						end
+					end
+				end
+				if(self.xspeed>0 and (globals.current_scene.map:coliding(self.x+24+self.xspeed,self.y) or globals.current_scene.map:coliding(self.x+24+self.xspeed,self.y+23))) then
+					-- If it will collide in the next X update, find the difference between the collision point and our xposition and add them!
+					colx = math.floor((self.x+24+self.xspeed)/24)*24
+					self.x = self.x+(colx-self.x)-24
+					self.xspeed = self.xspeed * -1
+				elseif(self.xspeed<0 and (globals.current_scene.map:coliding(self.x+self.xspeed,self.y) or globals.current_scene.map:coliding(self.x+self.xspeed,self.y+23))) then
+					colx = math.floor((self.x+18+self.xspeed)/24)*24
+					self.x = self.x+(colx-self.x)
+					self.xspeed = self.xspeed *-1
+				end
+				self.x = self.x+self.xspeed
+				if(self.onGround == 0) then
+					self.y = self.y + self.yspeed
+				end
+		
+				--Check to see if it's bumping into other entities
+				cenem = 1
+				while (self.other_ents[cenem]~=nil) do 
+					if((math.abs(self.other_ents[cenem].x - self.x) + math.abs(self.other_ents[cenem].y - self.y))<48 and self.other_ents[cenem].alive) then -- enemy has to be pretty close before collision testing
+						if(self.xspeed>0) then
+							if(self.other_ents[cenem].xspeed<0 and self.other_ents[cenem].x<self.x+24 and self.other_ents[cenem].x>self.x) then
+								self.xspeed = self.xspeed *-1
+								self.other_ents[cenem].xspeed = self.other_ents[cenem].xspeed *-1
+								break -- Won't be hitting any more enemies this cycle!
+							end
+						else
+							if(self.other_ents[cenem].xspeed>0 and self.other_ents[cenem].x+24>self.x and self.other_ents[cenem].x<self.x+24) then
+								self.xspeed = self.xspeed *-1
+								self.other_ents[cenem].xspeed = self.other_ents[cenem].xspeed *-1
+								break --- Read up !
+							end
+						end
+					end
+					cenem = cenem + 1
+				end
+
+				--Check to see if monkey-oh has squished it!
+				if(globals.player.yspeed>0) then -- Only check to get squished if the player is infact travelling downwards!
+					if(globals.player.x+23>self.x and globals.player.x+23<self.x+24) then -- SQUISHY!
+						if(globals.player.y+48>self.y and globals.player.y+48<self.y+24) then
+							self.csprite = 1
+							self.alive = false
+							self.killtime = SDL.get_ticks()
+							globals.player.yspeed = -5
+						end
+					end
+				end
+			else
+				-- Not alive, so wait until it's been dead for a second before erasing it
+				if(SDL.get_ticks()>self.killtime+1000) then
+					return false
+				end
+			end
+			self.sprites[self.csprite]:draw_and_update(self.x, self.y, globals.current_scene.map:get_canvas())
+			return true
+		end
+	}
+	bagoom:init(ents)
+	return bagoom
+end

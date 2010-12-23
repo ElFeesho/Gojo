@@ -1,0 +1,66 @@
+function new_game()
+	local game =
+	{
+		objs = {},
+		enemies = {},
+		map = nil,
+		music = nil,
+		load_map = function(self, filename)
+			mapfile = io.open(Game.working_dir.."/"..filename)
+			if(not mapfile) then
+				SDL.send_fatal_error("Couldn't open mapfile")
+			end
+			for line in mapfile:lines() do
+				if(line:match("^mapfile:%s*.+")~=nil) then -- Found the map file to load
+					self.map = new_tilemap(line:match("mapfile:%s*(.+)"))
+				elseif(line:match("^block: %d+ %d+ %d+")~=nil) then	-- Found a block to be adding!
+					x, y, contents = line:match("block: (%d+) (%d+) (%d+)")
+					table.insert(self.objs, new_block(tonumber(x), tonumber(y), contents, false))
+				elseif(line:match("^hidden block: %d+ %d+ %d+")~=nil) then	-- Found a hidden block to be adding!
+					x, y, contents = line:match("block: (%d+) (%d+) (%d+)")
+					table.insert(self.objs, new_block(tonumber(x), tonumber(y), contents, true))
+				elseif(line:match("^bagoom: %d+ %d+")~=nil) then -- Found a bagoom
+					x, y = line:match("^bagoom: (%d+) (%d+)")
+					table.insert(self.enemies, new_bagoom(tonumber(x), tonumber(y),self.enemies))
+				end
+			end
+		end,
+		init = function(self)
+			-- Load map here --
+			self:load_map("map1.gjm")
+			self.music = SDL.music_load("rsrcs/tune.mod")
+--			self.music:play()
+			globals.player = new_player()
+		end,
+		update = function(self)
+			SDL.draw_rect(0,0,Game.w, Game.h,"#0099ff")
+			self.map:clear_canvas()
+			self.map:focus_to(globals.player.x+24, globals.player.y+24)
+			self.map:draw_to(0)
+			self.map:draw_from(1)
+			globals.player:update()
+			cobj = 1
+			while(self.objs[cobj]~=nil) do
+				if(not self.objs[cobj]:update()) then
+					table.remove(self.objs, cobj)
+				else
+					cobj = cobj+1
+				end
+			end
+			cobj = 1
+			while(self.enemies[cobj]~=nil) do -- Enemies are in their own array- makes it less intensive for inter enemy collision detection
+				if(self.enemies[cobj].x<self.map.cx+Game.w) then
+					self.enemies[cobj].active = true
+				end
+				if(not self.enemies[cobj]:update()) then
+					table.remove(self.enemies, cobj)
+				else
+					cobj = cobj+1
+				end
+			end
+			self.map:draw()
+		end
+	}
+	game:init()
+	return game
+end

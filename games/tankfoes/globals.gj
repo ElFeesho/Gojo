@@ -1,0 +1,10 @@
+globals =
+{
+	levelSurf = nil,	
+	musicHandle = nil,
+	socket_handle = nil,
+	socket_set = nil,
+	map = nil,
+	playerTank = nil,
+	enemyTank = nil
+}

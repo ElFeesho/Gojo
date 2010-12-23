@@ -1,0 +1,34 @@
+Game.name = "Gui Test"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+
+Game.update_ticks = 20
+
+require("modules/gui") -- For panels, buttons, text fields etc
+
+main_window = nil
+
+function on_button_pressed(button)
+	print("Button pressed, it's X is "..button.x.." and it's Y is "..button.y)
+end
+
+function on_button_release(button)
+	print("Button released, it's X is "..button.x.." and it's Y is "..button.y)
+end
+
+function on_init()
+	-- Create the GUI
+	main_window = new_window(10, 20, 500, 350)
+	button = new_button(10, 32, 128, 48)
+	button:set_on_press(on_button_pressed)
+	button:set_on_release(on_button_release)
+	main_window:add_child(button)
+	main_window:add_child(new_checkbox(10,96))
+end
+
+function on_update()
+	SDL.draw_rect(0, 0, Game.w, Game.h, "white")
+	main_window:update()
+end

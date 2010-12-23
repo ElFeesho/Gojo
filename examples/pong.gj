@@ -1,0 +1,157 @@
+Game.name = "Pong"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+Game.bpp = 32
+
+Game.update_tick = 10
+
+-- Load Bitmap Font Module --
+require("modules/bfont")
+
+-- The score bitmap font --
+score_font = nil
+
+-- Paddle and ball images --
+player1 = nil
+player2 = nil
+ball = nil
+
+-- Ball Properties --
+ballxspeed = 1.0
+ballyspeed = 1.0
+
+-- Scores --
+player1score = 0
+player2score = 0
+
+-- Game Status, 0 pre-game, 1 in game
+game_stat = 0
+
+-- Used for count in timer --
+game_start_time = 0
+
+function on_init()
+	score_font = new_bfont("images/font.png", 36, 64, "0123456789", 5)
+	player1 = SDL.surface_load("images/paddle.png")
+	player2 = SDL.surface_load("images/paddle.png")
+	ball = SDL.surface_load("images/ball.png")
+
+	player1.x = 16
+	player1.y = Game.h/2 - player1.h/2
+	player2.x = Game.w - player2.w - 16
+	player2.y = Game.h/2 - player1.h/2
+	
+	ball.x = Game.w/2-8
+	ball.y = Game.h/2-8
+
+	game_start_time = SDL.get_ticks()
+end
+
+function on_update()
+	-- Clear the Screen --
+	SDL.draw_rect(0,0, Game.w, Game.h, "black")
+
+	score_font:text_draw(Game.w/5*2-18,10,player1score)
+	score_font:text_draw(Game.w/5*3-18,10,player2score)
+
+	player1:blit()
+	player2:blit()
+	ball:blit()
+
+	if(game_stat == 1) then
+		-- Read input to alter paddle position and update --
+		if(SDL.get_key(97)) then
+			player1.y = player1.y - 2
+			if(player1.y < 0) then 
+				player1.y = 0
+			end
+		elseif(SDL.get_key(122)) then
+			player1.y = player1.y + 2
+			if(player1.y>Game.h-player1.h) then	
+				player1.y = Game.h-player1.h
+			end
+		end
+
+		if(SDL.get_key(273)) then
+			player2.y = player2.y - 2
+			if(player2.y < 0) then 
+				player2.y = 0
+			end
+		elseif(SDL.get_key(274)) then
+			player2.y = player2.y + 2
+			if(player2.y>Game.h-player2.h) then	
+				player2.y = Game.h-player2.h
+			end
+		end
+		-- the ball's position --
+		ball.x = ball.x + ballxspeed
+		ball.y = ball.y + ballyspeed
+		if(ball.x > Game.w + ball.w * 11) then
+			player1score = player1score + 1
+			ball.x = Game.w / 2 - 8
+			ball.y = Game.h / 2 - 8
+			ballxspeed = -1
+			ballyspeed = -1
+		elseif(ball.x < ball.w*-10) then
+			player2score = player2score + 1
+			ball.x = Game.w / 2 - 8
+			ball.y = Game.h / 2 - 8
+			ballxspeed = 1
+			ballyspeed = 1
+		end
+		if(ball.y+16 > Game.h) then
+			ball.y = Game.h - 16
+			ballyspeed = ballyspeed * -1
+		elseif(ball.y<0) then
+			ball.y = 0
+			ballyspeed = ballyspeed * -1
+		end
+		-- Collision detection with paddles --
+		if(ballxspeed < 0) then
+			if(ball.x < player1.x+player1.w and ball.y<player1.y+player1.h and ball.y+16>player1.y and ball.x+16 > player1.x) then
+				local padc = player1.y+player1.h/2
+				local b_off = ball.y-padc
+				if(b_off<0) then
+					ballyspeed = -1.0 + (b_off/(player1.h/2))*1.0
+				elseif(b_off>0) then
+					ballyspeed = 1.0 + (b_off/(player1.h/2))*1.0
+				end
+				ball.x = player1.x+player1.w
+				ballxspeed = ballxspeed * -1.15
+			end
+		elseif(ballxspeed > 0) then
+			if(ball.x+16 > player2.x and ball.y<player2.y+player2.h and ball.y+16>player2.y and ball.x<player2.x+player2.w) then
+				local padc = player2.y+player2.h/2
+				local b_off = ball.y-padc
+				if(b_off<0) then
+					ballyspeed = -1.0 + (b_off/(player2.h/2))*1.0
+				elseif(b_off>0) then
+					ballyspeed = 1.0 + (b_off/(player2.h/2))*1.0
+				end
+				ball.x = player2.x-16
+				ballxspeed = ballxspeed * -1.15
+			end
+		end
+		if(ballxspeed > 4) then
+			ballxspeed = 4
+		elseif(ballxspeed < -4) then
+			ballxspeed = -4
+		end
+	elseif(game_stat == 0) then
+		if(SDL.get_ticks()-game_start_time < 1000) then
+			score_font:text_draw(Game.w/2-18, Game.h/2-32,"3")
+		elseif(SDL.get_ticks()-game_start_time >= 1000 and SDL.get_ticks()-game_start_time < 2000) then
+			score_font:text_draw(Game.w/2-18, Game.h/2-32,"2")
+		elseif(SDL.get_ticks()-game_start_time >= 2000 and SDL.get_ticks()-game_start_time < 3000) then
+			score_font:text_draw(Game.w/2-18, Game.h/2-32,"1")
+		else
+			-- Begin game after count in --
+			game_stat = 1
+		end
+	end
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+end

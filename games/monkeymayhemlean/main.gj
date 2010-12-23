@@ -1,0 +1,24 @@
+Game.name = "Monkey Mayhem"
+Game.author = "Feesh!"
+Game.w = 640
+Game.h = 480
+Game.fullscreen = 1
+Game.update_tick = 15
+Game.hw = 0
+require("modules/sprite")
+require("modules/tilemap")
+require("globals")
+require("player")
+require("title")
+require("block")
+require("game")
+function on_init()
+	globals.cs = new_title()
+	SDL.mouse_hide()
+end
+function on_update(ticks)
+	globals.cs:update()
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+end

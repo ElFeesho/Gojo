@@ -1,0 +1,35 @@
+Game.name = "Monkey Mayhem"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+Game.fullscreen = 0
+Game.update_tick = 1000/60
+Game.hw = 0
+
+require("modules/sprite")
+require("modules/tilemap")
+
+require("globals")
+require("player")
+require("title")
+require("block")
+require("bagoom")
+require("game")
+
+function on_init()
+	globals.current_scene = new_title()
+	SDL.mouse_hide()
+end
+
+function on_update(ticks)
+	globals.current_scene:update()
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+end
+
+function on_quit()
+	globals.current_scene = nil
+	collectgarbage("collect")
+end

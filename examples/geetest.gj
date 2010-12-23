@@ -1,0 +1,26 @@
+-- Geeboard Test
+
+Game.name = "Geeboard Test"
+Game.author = "Feesh!"
+Game.w = 320
+Game.h = 240
+Game.update_tick = 10
+Game.audio = 0
+Game.net = 0
+
+require("modules/geeboard")
+
+myGee = nil
+
+function on_init()
+	myGee = new_geeboard(20,30)
+end
+
+function on_update(ticks)
+	SDL.draw_rect(0,0,Game.w, Game.h, "black")
+	if(myGee:update()==1) then
+		print("String: "..myGee.string)
+		myGee.string = ""
+	end
+end
+

@@ -1,0 +1,139 @@
+-- Player.gj
+--
+-- Player.gj has the player table, with all the functions
+-- it may need to be useful, mainly update. Player is included
+-- after sprite.lua so sprite calls can be made
+
+function new_player(px, py)
+	player = {
+		sprites = {},
+		dir = 1,
+		x = 0,
+		y = 0,
+		walking = 0,
+		cmap = nil,
+		wbump = nil,
+		wlasthit = 0,
+		init = 
+		function(self, x, y)
+			self.x = x
+			self.y = y
+			self.ax = x
+			self.ay = y
+			self.cmap = globals.level.cmap
+			self.sprites[0] = new_sprite("sprites/player/ustand.spr")
+			self.sprites[1] = new_sprite("sprites/player/uwalk.spr")
+			self.sprites[2] = new_sprite("sprites/player/dstand.spr")
+			self.sprites[3] = new_sprite("sprites/player/dwalk.spr")
+			self.sprites[4] = new_sprite("sprites/player/lstand.spr")
+			self.sprites[5] = new_sprite("sprites/player/lwalk.spr")
+			self.sprites[6] = new_sprite("sprites/player/rstand.spr")
+			self.sprites[7] = new_sprite("sprites/player/rwalk.spr")
+			wbump = SDL.sound_load("sounds/wallbump.ogg")
+		end,
+		update =
+		function(self)
+			local xaxis = 0
+			local yaxis = 0
+			local key_down = 0
+			xaxis = SDL.get_joy_axis(0)
+			yaxis = SDL.get_joy_axis(1)
+
+			if(SDL.get_key(276)) then
+				xaxis = -1
+			elseif(SDL.get_key(275)) then
+				xaxis = 1
+			elseif(SDL.get_key(273)) then
+				yaxis = -1
+			elseif(SDL.get_key(274)) then
+				yaxis = 1
+			end
+		
+			if (self.x % 32 == 0 and self.y % 32 == 0) then
+				if (yaxis<0) then
+					if (self.dir ~= 0) then
+						self.dir = 0
+						self.sprites[1]:reset_sprite()
+					else
+						key_down = 1
+					end
+				elseif (yaxis>0) then
+					if(self.dir ~= 1) then
+						self.dir = 1
+						self.sprites[3]:reset_sprite()
+					else
+						key_down = 1
+					end
+				elseif (xaxis>0) then
+					if(self.dir ~= 3) then
+						self.dir = 3
+						self.sprites[7]:reset_sprite()
+					else
+						key_down = 1
+					end
+				elseif (xaxis<0) then
+					if (self.dir ~= 2) then
+						self.dir = 2
+						self.sprites[5]:reset_sprite()
+					else
+						key_down = 1
+					end
+				end
+			end
+			
+			if(key_down == 1) then
+				self.walking = 1
+			else
+				if(self.x % 32 == 0 and self.y % 32 == 0) then
+					self.walking = 0
+				end
+			end
+
+			if(self.walking == 1) then
+				if (self.dir == 0) then -- UP!
+					if(globals.level.cmap:get_pixel(self.x,self.y-16)==0 or self.y%32 ~= 0) then
+						self.y = self.y - 1
+					else
+						if(key_down == 1 and SDL.get_ticks()>self.wlasthit+300) then
+							wbump:play()
+							self.wlasthit = SDL.get_ticks()
+						end
+					end
+				elseif(self.dir == 1) then -- DOWN!
+					if(globals.level.cmap:get_pixel(self.x,self.y+48)==0 or self.y%32 ~= 0) then
+						self.y = self.y + 1
+					else
+						if(key_down == 1 and SDL.get_ticks()>self.wlasthit+300) then
+							wbump:play()
+							self.wlasthit = SDL.get_ticks()
+						end
+					end
+				elseif (self.dir == 2) then -- LEFT!
+					if(globals.level.cmap:get_pixel(self.x-16,self.y)==0 or self.x%32 ~= 0) then
+						self.x = self.x - 1
+					else
+						if(key_down == 1 and SDL.get_ticks()>self.wlasthit+300) then
+							wbump:play()
+							self.wlasthit = SDL.get_ticks()
+						end
+					end
+				elseif (self.dir == 3) then -- RIGHT!
+					if(globals.level.cmap:get_pixel(self.x+48,self.y)==0 or self.x%32 ~= 0) then
+						self.x = self.x + 1
+					else
+						if(key_down == 1 and SDL.get_ticks()>self.wlasthit+300) then
+							wbump:play()
+							self.wlasthit = SDL.get_ticks()
+						end
+					end
+				end
+			end
+			globals.level:focus_to(self.x, self.y)
+			globals.level:draw_to(0)
+			self.sprites[self.dir*2+self.walking]:draw_and_update(self.x, self.y, globals.level:get_canvas())
+			globals.level:draw_from(1)
+		end
+	}
+	player:init(px, py)
+	return player
+end

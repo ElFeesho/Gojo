@@ -1,0 +1,178 @@
+function new_geeboard(dx, dy)
+	geeboard = {
+		key = nil,
+		keyspace = nil,
+		keyreturn = nil,
+		font = nil,
+		last_key = 0,
+		ltick_key = 0,
+		lkey = 0,
+		letters = nil,
+		mx = -1,
+		my = -1,
+		mdown = 0,
+		x = 0,
+		y = 0,
+		button = -1,
+		string = "",
+		init =
+		function(self, x, y)
+			self.x = x
+			self.y = y
+			self.key = SDL.surface_load("images/geekey.png")
+			self.keyspace = SDL.surface_load("images/geekey_space.png")
+			self.keyreturn = SDL.surface_load("images/geekey_return.png")
+			self.font = SDL.text_load("fonts/arial.ttf",16)
+			-- Dirty I know, but I can't think of a better way :(
+			self.letters = {}
+			self.letters[0] =  self.font:create(self.x+18, self.y+72, "black","Q")
+			self.letters[0].img = self.key -- Like a pointer, NOT a copy
+			self.letters[1] =  self.font:create(self.x+42,  self.y+72, "black","W")
+			self.letters[1].img = self.key -- Like a pointer, NOT a copy
+			self.letters[2] =  self.font:create(self.x+66,  self.y+72,  "black","E")
+			self.letters[2].img = self.key -- Like a pointer, NOT a copy
+			self.letters[3] =  self.font:create(self.x+90,  self.y+72,  "black","R")
+			self.letters[3].img = self.key -- Like a pointer, NOT a copy
+			self.letters[4] =  self.font:create(self.x+114,  self.y+72,  "black","T")
+			self.letters[4].img = self.key -- Like a pointer, NOT a copy
+			self.letters[5] =  self.font:create(self.x+138, self.y+72,  "black","Y")
+			self.letters[5].img = self.key -- Like a pointer, NOT a copy
+			self.letters[6] =  self.font:create(self.x+162, self.y+72,  "black","U")
+			self.letters[6].img = self.key -- Like a pointer, NOT a copy
+			self.letters[7] =  self.font:create(self.x+186, self.y+72,  "black","I")
+			self.letters[7].img = self.key -- Like a pointer, NOT a copy
+			self.letters[8] =  self.font:create(self.x+210, self.y+72,  "black","O")
+			self.letters[8].img = self.key -- Like a pointer, NOT a copy
+			self.letters[9] =  self.font:create(self.x+234, self.y+72,  "black","P")
+			self.letters[9].img = self.key -- Like a pointer, NOT a copy
+			self.letters[10] = self.font:create(self.x+18,   self.y+96, "black","A")
+			self.letters[10].img = self.key -- Like a pointer, NOT a copy
+			self.letters[11] = self.font:create(self.x+42,  self.y+96, "black","S")
+			self.letters[11].img = self.key -- Like a pointer, NOT a copy
+			self.letters[12] = self.font:create(self.x+66,  self.y+96, "black","D")
+			self.letters[12].img = self.key -- Like a pointer, NOT a copy
+			self.letters[13] = self.font:create(self.x+90,  self.y+96, "black","F")
+			self.letters[13].img = self.key -- Like a pointer, NOT a copy
+			self.letters[14] = self.font:create(self.x+114, self.y+96, "black","G")
+			self.letters[14].img = self.key -- Like a pointer, NOT a copy
+			self.letters[15] = self.font:create(self.x+138, self.y+96, "black","H")
+			self.letters[15].img = self.key -- Like a pointer, NOT a copy
+			self.letters[16] = self.font:create(self.x+162, self.y+96, "black","J")
+			self.letters[16].img = self.key -- Like a pointer, NOT a copy
+			self.letters[17] = self.font:create(self.x+186, self.y+96, "black","K")
+			self.letters[17].img = self.key -- Like a pointer, NOT a copy
+			self.letters[18] = self.font:create(self.x+210, self.y+96, "black","L")
+			self.letters[18].img = self.key -- Like a pointer, NOT a copy
+			self.letters[19] = self.font:create(self.x+18,  self.y+120, "black","Z")
+			self.letters[19].img = self.key -- Like a pointer, NOT a copy
+			self.letters[20] = self.font:create(self.x+42,  self.y+120, "black","X")
+			self.letters[20].img = self.key -- Like a pointer, NOT a copy
+			self.letters[21] = self.font:create(self.x+66,  self.y+120, "black","C")
+			self.letters[21].img = self.key -- Like a pointer, NOT a copy
+			self.letters[22] = self.font:create(self.x+90,  self.y+120, "black","V")
+			self.letters[22].img = self.key -- Like a pointer, NOT a copy
+			self.letters[23] = self.font:create(self.x+114, self.y+120, "black","B")
+			self.letters[23].img = self.key -- Like a pointer, NOT a copy
+			self.letters[24] = self.font:create(self.x+138, self.y+120, "black","N")
+			self.letters[24].img = self.key -- Like a pointer, NOT a copy
+			self.letters[25] = self.font:create(self.x+162, self.y+120, "black","M")
+			self.letters[25].img = self.key -- Like a pointer, NOT a copy
+			self.letters[26] = self.font:create(self.x+186, self.y+120, "black",".")
+			self.letters[26].img = self.key -- Like a pointer, NOT a copy
+			self.letters[27] = self.font:create(self.x+66, self.y+144, "black"," ")
+			self.letters[27].img = self.keyspace
+			self.letters[28] = self.font:create(self.x+210, self.y+96, "white"," ")
+			self.letters[28].img = self.keyreturn
+			self.letters[28].string = "ret"
+			for nums = 1,10,1 do
+				if(nums<10) then
+					self.letters[28+nums] = self.font:create(self.x+18+(24*(nums-1)), self.y+48, "black",nums)
+				else
+					self.letters[28+nums] = self.font:create(self.x+18+(24*(nums-1)), self.y+48, "black",0)
+				end
+				self.letters[28+nums].img = self.key
+			end
+		end,
+		update =
+		function(self)
+			self.mx, self.my, self.button = SDL.get_mouse(1)
+			if(self.mdown == 1) then
+				if(self.button == 1) then
+					self.button = 0
+				else
+					self.mdown = 0
+				end
+			else
+				if(self.button == 1) then
+					self.mdown = 1
+				end
+			end
+			return self:draw()
+		end,
+		draw =
+		function(self)
+			SDL.draw_rect(self.x, self.y, 274,32, "black")
+			SDL.draw_rect(self.x+2, self.y+2, 270,28, "white")
+
+			cletd = SDL.get_key()
+			if(cletd ~= false) then
+				if(cletd ~= self.lkey or SDL.get_ticks()>self.lkey_tick+800) then
+					if(cletd == 8) then
+						self.string = self.string:sub(1,-2)
+					else
+						self.string = self.string..string.char(cletd)
+					end
+					self.lkey = cletd
+					self.lkey_tick = SDL.get_ticks()
+				end
+			else
+				self.lkey = 0
+			end
+
+
+			if(string.len(self.string)>0) then
+				self.font:draw(self.x+5, self.y+5 , "black", self.string)
+			end
+			hl = -1
+			for clet = 0,#self.letters,1 do
+				if(((self.mx > self.letters[clet].x and self.mx < self.letters[clet].x+self.letters[clet].img.w and self.my > self.letters[clet].y and self.my<self.letters[clet].y+self.letters[clet].img.h) or SDL.get_key(string.byte(string.lower(self.letters[clet].string)))==1) and hl == -1) then 
+					hl = clet
+				else
+					self.letters[clet].img:blit(self.letters[clet].x, self.letters[clet].y)
+					self.letters[clet]:blit(self.letters[clet].x+5,self.letters[clet].y)
+				end
+			end
+			if(hl>=0) then
+				if(self.button==0) then
+					self.letters[hl].img:blit(self.letters[hl].x-(self.letters[hl].img.w*0.1), self.letters[hl].y-(self.letters[hl].img.h*0.1),0,1.2)
+				else
+					self.letters[hl].img:blit(self.letters[hl].x+(self.letters[hl].img.w*0.1), self.letters[hl].y+(self.letters[hl].img.h*0.1),0,0.8)
+					if(self.letters[hl].string == "ret") then
+						return 1
+					end
+					if(string.len(self.string)<25) then
+						self.string = self.string..self.letters[hl].string
+					end
+				end
+				SDL.surface_blit(self.letters[hl], self.letters[hl].x+5,self.letters[hl].y)
+				if(SDL.get_key(self.last_key)==false) then
+					self.last_key = 0
+				end
+				if(SDL.get_key(string.byte(string.lower(self.letters[hl].string)),1)==1 and self.last_key == 0) then
+					self.last_key = string.byte(string.lower(self.letters[hl].string))
+					self.letters[hl].img:blit(self.letters[hl].x+(self.letters[hl].img.w*0.1), self.letters[hl].y+(self.letters[hl].img.h*0.1),0,0.8)
+					if(string.len(self.string)<25) then
+						self.string = self.string..self.letters[hl].string
+					end
+					hl = 0
+				end
+				if(SDL.get_key(13) and self.last_key == 0) then
+					return 1
+				end
+			end
+			return 0
+		end		
+	}
+	geeboard:init(dx,dy)
+	return geeboard
+end

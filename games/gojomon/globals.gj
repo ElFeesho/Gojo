@@ -1,0 +1,8 @@
+globals =
+{
+	current_scene = nil,
+	music = nil,
+	player = nil,
+	connected = 0,
+	level = nil
+}

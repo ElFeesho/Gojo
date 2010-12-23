@@ -1,0 +1,26 @@
+Game.name = "Tilemap Test"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+
+Game.update_tick = 20
+
+require("modules/tilemap")
+
+tmap = nil
+
+function on_init()
+	tmap = new_tilemap("resources/test.gjm")
+end
+
+function on_update()
+	tmap:draw_to(0)
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+	if(SDL.get_key()) then
+		tmap:draw_from(1)
+	end
+	tmap:draw()
+end

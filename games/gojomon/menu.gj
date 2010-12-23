@@ -1,0 +1,79 @@
+function new_menu()
+	menu =
+	{
+		accept_menu = false,
+		logo = nil,
+		menubox = nil,
+		menusel = nil, 
+		menuhi = nil,
+		last_change = 0,
+		menu_text = {},
+		menu_sound = nil,
+		font = nil,
+		init =
+		function(self)
+			self.font = SDL.text_load("arial.ttf",18)
+			
+			self.logo = SDL.surface_load("images/logo.png")
+			self.logo.x = Game.w/2 - self.logo.w/2
+			self.logo.y = 16
+
+			self.menubox = SDL.surface_load("images/menubox.png")
+			self.menubox.x = 16
+			self.menubox.y = Game.h - self.menubox.h-16
+
+			self.menu_text[0] = self.font:create(0,0,"black","Start Game")
+			self.menu_text[0].x = 48
+			self.menu_text[0].y = self.menubox.y + 24
+			self.menu_text[1] = self.font:create(0,0,"black","Join Network")
+			self.menu_text[1].x = 48
+			self.menu_text[1].y = self.menubox.y + 58
+
+			self.menu_sel = new_sprite("sprites/gfx/sel.spr")
+			self.menu_sel.x = 26
+			self.menu_sel.y = self.menu_text[0].y+2
+
+			self.menu_sound = SDL.sound_load("sounds/menusel.ogg")
+
+			self.menuhi = 0
+		end,
+		
+		update
+		= function(self, ticks)
+			SDL.draw_rect(0,0,Game.w, Game.h,"white")
+			self.logo:blit()
+			self.menubox:blit()
+			self.menu_text[0]:blit()
+			self.menu_text[1]:blit()
+			if(self.accept_menu) then
+				if(SDL.get_key(273) and SDL.get_ticks()>self.last_change+100 and self.menuhi == 1) then
+					self.menu_sel.y = self.menu_text[0].y+2
+					self.menuhi = 0
+					self.last_change = SDL.get_ticks()
+					self.menu_sound:play()
+				elseif(SDL.get_key(274) and SDL.get_ticks()>self.last_change+100 and self.menuhi == 0) then
+					self.menu_sel.y = self.menu_text[1].y+2
+					self.menuhi = 1
+					self.last_change = SDL.get_ticks()
+					self.menu_sound:play()
+				end
+				if(SDL.get_key(32)) then
+					if(self.menuhi == 0) then
+						globals.current_scene = new_game()
+					end
+					if(self.menuhi == 1) then
+						globals.current_scene = new_network()
+					end
+				end
+			else
+				if(not SDL.get_key()) then -- There is no key down, so we can now accept input! this is to prevent the menu flashing for a split second if the user hit's space to get to the menu
+					self.accept_menu = true
+				end
+			end
+			self.menu_sel:draw_and_update()
+			return 1
+		end,
+	}
+	menu:init()
+	return menu
+end

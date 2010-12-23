@@ -1,0 +1,199 @@
+function new_bfont(bitmap_file, xw, yh, mapping, padding)
+	bfont = 
+	{
+		surface = nil,
+		xsize = 0,
+		ysize = 0,
+		pad = 0,
+		mapping_string = nil,
+		init = 
+		function (self, bfile, xwidth, ywidth, mapping, padding)
+			self.surface = SDL.surface_load(bfile)
+			self.xsize = xwidth
+			self.ysize = ywidth
+			self.mapping_string = mapping
+			if(padding~=nil) then
+				self.pad = padding
+			end
+		end,
+		text_create =
+		function (self, x, y, text)
+			local lines = 0
+			local max_length = 1
+			local current_line_len = 1
+			text = tostring(text)
+			for clet = 1, text:len(), 1 do 
+				if(string.sub(text,clet,clet)~="\n" and clet < string.len(text)) then
+					current_line_len = current_line_len + 1
+				else
+					max_length = math.max(max_length,current_line_len)
+					current_line_len = 0
+					lines = lines + 1
+				end
+			end
+			new_surface = SDL.surface_create(x,y, self.xsize*max_length+(max_length*self.pad), self.ysize*lines+(lines*self.pad))
+			local xpos = 0
+			local ypos = 0
+			for cur_let = 1, string.len(text), 1 do
+				char = string.sub(text,cur_let,cur_let)
+				pos_in_map = string.find(self.mapping_string,char,1,true)
+				if(pos_in_map == nil) then
+					if(char=="\n") then
+						ypos=ypos+1
+						xpos = 0
+					else
+						xpos = xpos+1
+					end
+				else
+					SDL.surface_blit_area(self.surface,(pos_in_map-1)*self.xsize,0,self.xsize, self.ysize, xpos*self.xsize+(self.pad*xpos), ypos*self.ysize+(self.pad*ypos), new_surface)
+					xpos = xpos+1
+				end
+			end
+			return new_surface
+		end,
+		text_create_wrapped =
+		function (self, x, y, width, text)
+			if(width<1) then
+				width = Game.w/self.xsize
+			end
+			-- Figure out just how many times we are going to be splitting the string apart
+			-- Since the bitmap fonts are monospaced, it'll be the length of the substrings that are
+			-- from the beginning of the string to a \n character, divided by width + the actual number
+			-- of \n characters.
+			--
+			-- So. if we had "this is a test\nha\nTest test test\nTEST!
+			-- And we want to wrap every ten characters, we'd do 
+			-- length of floor("this is a test" / 10) + floor("ha"/10) + floor("Test test test"/10) + floor("TEST!/10)+3 + 1 (for beginning line)
+			-- which will come out to approximately... 82 pounds 57 pence, and 1+0+1+0+3 = 5, so the result surface will 
+			-- be 6 * self.ysize * self.pad
+			-- Simple! isn't it! No - not really
+			-- Resulting text will be:
+			--
+			-- this is a t
+			-- est
+			-- ha
+			-- Test test 
+			-- test
+			-- TEST!
+			--
+			-- Hyphenation is going to be a bit of a kick in the teeth, as it will start adding to the length of other strings.
+			newline_count = 1
+			surfheight = 1
+			lastnl = 1
+			cstring_len = 0
+			strings = {}
+			strings[0] = text
+			for clet = 1, text:len(), 1 do 
+				cstring_len = cstring_len + 1
+				if(string.char(text:byte(clet))=="\n") then
+					newline_count = newline_count+1
+					surfheight = surfheight + 1
+					table.insert(strings,text:sub(lastnl,clet-1))
+					lastnl = clet+1
+					cstring_len = 0
+				end
+			end
+			if(cstring_len~=0) then -- Either no line breaks, OR, there was some excess string after a line break, either way
+				table.insert(strings,text:sub(lastnl,lastnl+cstring_len))
+			end
+			-- At this point we have a couple of piece of information
+			-- We have a table of all the lines of text! (splitted by \n)
+			-- We have all the newline's counted (newline_count)
+			-- We have a rough surfheight (all the \n added up)
+			-- Now it's time to start splitting the strings even more so
+			-- For each string we have in the table, we're going to
+			-- iterate through and start splitting them up into 
+			-- essentially, lines that can be blitted on their own
+			cstr = 1
+			while(strings[cstr]~=nil) do
+				if(strings[cstr]~=nil) then
+					if(strings[cstr]:len()>width) then -- the string needs to be broken down
+						pos = width
+						hyphen = false
+						while(string.char(strings[cstr]:byte(pos))~=' ') do -- We don't want to chop a word in the middle! that's just not cricket
+							if(pos>0) then
+								pos = pos - 1
+							else
+								-- If we've got this far, it means someone has put a huge word in their string! 
+								-- So, we're gonna have to resort to hyphenation, I didn't want it to come to this either :(
+								hyphen = true
+								pos = width
+								break
+							end
+						end
+						local insertion = strings[cstr]:sub(pos+1) -- insert the new string onto 
+						while (string.char(insertion:byte(1))==' ') do
+							insertion = insertion:sub(2)
+						end
+						strings[cstr] = strings[cstr]:sub(1,pos)
+						if(hyphen) then
+							insertion = "-"..insertion
+						end
+						table.insert(strings,cstr+1,insertion)
+						-- Since we added a new line, surf_height needs to be increased
+						surfheight = surfheight + 1
+					else
+						-- String isn't huge enough to cause any breaking, awesome :D
+					end
+				end
+				cstr = cstr + 1
+			end
+			-- What's going on now? Well now, we should have a bunch of strings we want printing out line after line
+			-- and we also know how big the surface has to be, so lets make it
+			new_surface = SDL.surface_create(x,y, self.xsize*width+(width*self.pad), self.ysize*surfheight+(surfheight*self.pad))
+			local xpos = 0
+			local ypos = 0
+			for i = 1, #strings, 1 do
+				for cur_let = 1, strings[i]:len(), 1 do
+					char = string.char(strings[i]:byte(cur_let))
+					pos_in_map = string.find(self.mapping_string,char,1,true)
+					if(pos_in_map == nil) then
+					if(char=="\n") then
+						ypos=ypos+1
+						xpos = 0
+					else
+						xpos = xpos+1
+					end
+					else
+						SDL.surface_blit_area(self.surface,(pos_in_map-1)*self.xsize,0,self.xsize, self.ysize, xpos*self.xsize+(self.pad*xpos), ypos*self.ysize+(self.pad*ypos), new_surface)
+						xpos = xpos+1
+					end
+				end
+				ypos = ypos+1
+				xpos = 0
+			end
+			return new_surface
+		end,
+		text_draw = function(self, x, y, text, dest)
+			surf_handle = self:text_create(x, y, text)
+			if(dest~=nil) then
+				surf_handle:blit(dest)
+			else
+				surf_handle:blit()
+			end
+			surf_handle:destroy()
+		end,
+		text_draw_wrapped = function(self, x, y, width, text, dest)
+			surf_handle = self:text_create_wrapped(x, y, width, text)
+			if(dest~=nil) then
+				surf_handle:blit(dest)
+			else
+				surf_handle:blit()
+			end
+			surf_handle:destroy()
+		end,
+		text_draw_centre = function(self,text,dest)
+			surf_handle = self:text_create(0, 0, text)
+			surf_handle.x = Game.w/2-surf_handle.w/2
+			surf_handle.y = Game.h/2-surf_handle.h/2
+			if(dest~=nil) then
+				surf_handle:blit(dest)
+			else
+				surf_handle:blit()
+			end
+			surf_handle:destroy()
+		end
+	}
+	bfont:init(bitmap_file, xw, yh, mapping, padding)
+	return bfont
+end

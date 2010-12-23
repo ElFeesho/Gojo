@@ -1,0 +1,107 @@
+function new_sprite(filename)
+	sprite =
+	{
+		sprites = {},
+		current_frame = 0,
+		total_frames = 0,
+		last_time = 0,
+		rot = 0.0,
+		scale = 1.0,
+		x = 0,
+		y = 0,
+		time_factor = 1.0,
+		load_sprite = 
+		function (self,sprite_file)
+			local sfile = io.open(Game.working_dir..sprite_file)
+			local folder = sprite_file:sub(1,sprite_file:len()-sprite_file:reverse():find("/"))
+			self.last_time = SDL.get_ticks()
+			for line in sfile:lines() do
+				if(line:match("(.+) %d+")~=nil) then
+					self.sprites[self.total_frames] = SDL.surface_load(folder.."/"..line:match("(.+) %d"))
+					self.sprites[self.total_frames].delay = tonumber(line:match(".+ (%d+)"))
+					self.total_frames = self.total_frames + 1
+				end
+			end
+		end,
+		reset_sprite =
+		function (self)
+			self.current_frame = 0
+			self.last_time = SDL.get_ticks()
+		end,
+		draw =
+		function (self, target_surf)
+			if(self.current_frame >= self.total_frames or self.current_frame < 0) then
+--				print("Invalid frame reached! - "..self.current_frame)
+				return
+			end
+			self.sprites[self.current_frame].x = self.x
+			self.sprites[self.current_frame].y = self.y
+			self.sprites[self.current_frame].scale = self.scale
+			self.sprites[self.current_frame].rot = self.rot
+			if(target_surf~=nil) then
+				self.sprites[self.current_frame]:blit(target_surf)
+			else
+				self.sprites[self.current_frame]:blit()
+			end
+		end,
+		update =
+		function (self, x, y)
+			if(x~=nil) then
+				self.x = x
+			end
+			if(y~=nil) then
+				self.y = y
+			end
+			if(self.total_frames==1) then
+				return
+			end
+			if(SDL.get_ticks()>self.last_time+self.sprites[self.current_frame].delay*self.time_factor) then
+				if(self.current_frame+1<self.total_frames) then
+					self.current_frame = self.current_frame + 1
+					self.last_time = SDL.get_ticks()
+				else
+					self.current_frame = 0
+					self.last_time = SDL.get_ticks()
+				end
+			end
+		end,
+		draw_and_update = function (self, x, y,dest_surf)
+			self:update(x, y)
+			self:draw(dest_surf)
+		end,
+		set_rotate = function(self, new_rot)
+			self.rot = new_rot
+		end,
+		set_scale = function(self, new_scale)
+			self.scale = new_scale
+		end,
+		set_time_factor = function(self, new_factor)
+			if(new_factor>=1.0) then
+				self.time_factor = new_factor
+			end
+		end,
+		set_x = function(self, x)
+			self.x = x
+		end,
+		set_y = function(self, y)
+			self.y = y
+		end,
+		set_currentframe = function(self,frame)
+			self.current_frame = frame
+		end,
+		set_pos = function(self, x, y)
+			self.x = x
+			self.y = y
+		end,
+		destroy = function(self)
+			for i = 0, #self.sprites, 1 do
+				self.sprites[i]:destroy()
+			end
+		end
+	}
+	if(filename~=nil) then
+		sprite:load_sprite(filename)
+	end
+	return sprite
+end
+

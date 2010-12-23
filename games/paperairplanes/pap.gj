@@ -1,0 +1,152 @@
+require("sprite")
+
+Game.name = "Paper Airplanes"
+Game.author = "Feesh!"
+
+Game.w = 320
+Game.h = 240
+Game.bpp = 16
+Game.fullscreen = 0
+Game.update_tick = 10
+-- Vars
+
+-- Images
+
+splash = nil
+title = nil
+start_text = nil
+bg = nil
+
+--Sprites
+
+player = nil
+enemy_parent = nil
+enemies = {}
+
+-- Sound
+
+shot = nil
+explosion = nil
+
+-- Music 
+
+menu_music = nil
+game_music = nil
+
+-- Fonts
+
+title_fnt = nil
+game_fnt = nil
+
+-- Misc
+mode = 0
+start_time = 0
+
+bg_pos = 0
+
+-- /Vars
+
+-- Hooks
+
+function on_init()
+	if(splash == nil) then
+		splash = SDL.surface_load("images/splash.png")
+		splash.x = Game.w / 2 - splash.w / 2
+		splash.y = Game.h /2 - splash.w / 2
+	end
+
+	if(title_fnt == nil) then
+		title_fnt = SDL.text_load("dblock.ttf",36);
+	end
+
+	if(game_fnt == nil) then
+		game_fnt = SDL.text_load("arial.ttf",24);
+	end
+
+	if(title == nil) then
+		title = title_fnt:create(0,10,"black","Paper Airplanes")
+		title.x = Game.w/2-title.w/2
+	end
+	if(start_text == nil) then
+		start_text = game_fnt:create(0,0,"red","Push Fire to Start")
+		start_text.x = Game.w/2-start_text.w/2
+		start_text.y = Game.h-start_text.h*2
+	end
+	if(player == nil) then
+		player = new_sprite("sprites/plane/plane.spr")
+		player:set_x(Game.w/2-player.sprites[0].w/2)
+		player:set_y(Game.h-50)
+	end
+	if(enemy_parent == nil) then
+		enemy_parent = new_sprite("sprites/enemy/enemy.spr")
+		enemy_parent:set_x(Game.w/2-enemy_parent.sprites[0].w/2)
+		enemy_parent:set_y(Game.h/2)
+	end
+
+	if(bg == nil) then
+		bg = SDL.surface_load("images/bg.png")
+	end
+
+	if(menu_music == nil) then
+		menu_music = SDL.music_load("music/menu.xm")
+		SDL.music_fade_in(menu_music,-1,1000)
+	end
+	if(game_music == nil) then
+		game_music = SDL.music_load("music/game.xm")
+	end
+	mode = 0
+end
+
+function on_update(ticks)
+	if(mode == 0) then
+		draw_menu()	
+	end
+	if(mode == 1) then
+		draw_game()
+	end
+end
+
+function draw_menu()
+	bg:blit()
+	splash:blit()
+	title:blit()
+	if(SDL.get_ticks()>start_time+500) then
+		start_text:blit()
+		if(SDL.get_ticks()>start_time+1000) then
+			start_time = SDL.get_ticks()+500
+		end
+	end
+	if(SDL.get_key(32)) then
+		SDL.music_stop(menu_music)
+		SDL.music_play(game_music)
+		mode = 1
+	end
+end
+
+function draw_game()
+	SDL.surface_blit_area(bg,0,0,bg.w,bg.h-bg_pos,0,bg_pos)
+	SDL.surface_blit_area(bg,0,bg.h-bg_pos,bg.w,bg_pos,0,0)
+	bg_pos = bg_pos+2
+	if(bg_pos>Game.h) then
+		bg_pos = 0
+	end
+	if(SDL.get_key(276)) then
+		if(player.x>0) then
+			player:set_x(player.x-1.5)
+		else
+			player:set_x(0)
+		end
+	end
+	if(SDL.get_key(275)) then
+		if(player.x<Game.w-player.sprites[0].w) then
+			player:set_x(player.x+1.5)
+		else
+			player:set_x(Game.w-player.sprites[0].w)
+		end
+	end
+	if(SDL.get_key(27)) then
+		SDL.quit()
+	end
+	player:draw_and_update()
+	enemy_parent:draw_and_update()
+end

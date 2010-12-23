@@ -1,0 +1,16 @@
+mapfile: monkeyMap.gjm
+hidden block: 1176 336 2
+hidden block: 1992 336 2
+block: 96 336 2
+block: 216 336 3
+block: 264 336 4
+block: 240 240 4
+block: 1392 336 4
+block: 1824 240 4
+block: 2136 336 4
+block: 2208 336 4
+block: 2280 336 4
+block: 2208 240 4
+block: 2688 240 4
+block: 2712 240 4
+block: 3696 336 4

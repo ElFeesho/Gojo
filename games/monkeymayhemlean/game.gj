@@ -1,0 +1,48 @@
+function new_game()
+	local game=
+	{
+		objs={},
+		player=nil,
+		map=nil,
+		music=nil,
+		load_map=function(self,filename)
+			mapfile=io.open(Game.working_dir.."/"..filename)
+			for line in mapfile:lines() do
+				if(line:match("^mapfile:%s*.+")~=nil) then
+					self.map=new_tilemap(line:match("mapfile:%s*(.+)"))
+				elseif(line:match("^block: %d+ %d+ %d+")~=nil) then
+					x,y,contents=line:match("block: (%d+) (%d+) (%d+)")
+					table.insert(self.objs,new_block(tonumber(x),tonumber(y),contents,false))
+				elseif(line:match("^hidden block: %d+ %d+ %d+")~=nil) then
+					x,y,contents=line:match("block: (%d+) (%d+) (%d+)")
+					table.insert(self.objs,new_block(tonumber(x),tonumber(y),contents,true))
+				end
+			end
+		end,
+		init=function(self)
+			self:load_map("map1.gjm")
+			self.music=SDL.music_load("rsrcs/tune.mod")
+			self.music:play()
+			self.player=new_player()
+		end,
+		update=function(self)
+			SDL.draw_rect(0,0,Game.w,Game.h,"#0099ff")
+			self.map:clear_canvas()
+			self.map:focus_to(self.player.x+24,self.player.y+24)
+			self.map:draw_to(0)
+			self.map:draw_from(1)
+			self.player:update()
+			cobj=1
+			while(self.objs[cobj]~=nil) do
+				if(not self.objs[cobj]:update()) then
+					table.remove(self.objs,cobj)
+				else
+					cobj=cobj+1
+				end
+			end
+			self.map:draw()
+		end
+	}
+	game:init()
+	return game
+end

@@ -1,0 +1,44 @@
+-- Item Block --
+
+function new_block(xpos, ypos, content, hidden)
+	local block =
+	{
+		x = 0,
+		y = 0,
+		conts = 0,
+		presprite = nil,
+		hit = false,
+		hid = false,
+		update = function(self) -- game.gj calls this
+			if(globals.player.yspeed<0 and globals.player.y>self.y+24) then
+				if((globals.player.x+12<self.x+24 and globals.player.x+12>self.x) or (globals.player.x+35<self.x+24 and globals.player.x+35>self.x)) then
+					if(globals.player.y+globals.player.yspeed<self.y+24) then
+						self.hit = true
+						globals.player.y = self.y+24
+						globals.player.yspeed = 1
+						if(self.hid) then -- If this block was hidden, we've got to update the collision map and actual map so a block is in it's place
+							globals.current_scene.map.colset:blit_area(0,24,24,24,self.x,self.y,globals.current_scene.map.cmap)
+							globals.current_scene.map.tileset:blit_area(0,24,24,24,self.x,self.y,globals.current_scene.map.layers[0])
+							return false
+						end
+						self.presprite:destroy()
+						return false
+					end
+				end
+			end
+			if(not self.hid) then
+				self.presprite:draw_and_update(self.x, self.y, globals.current_scene.map:get_canvas())
+			end
+			return true
+		end
+	}
+	block.x = xpos
+	block.y = ypos
+	block.conts = content
+	block.hid = hidden
+	
+	if(not hidden) then
+		block.presprite = new_sprite("sprites/objs/block.spr")
+	end
+	return block
+end

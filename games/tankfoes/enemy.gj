@@ -1,0 +1,62 @@
+----------------------------------
+-- enemy Tank 'Class'          --
+----------------------------------
+
+function new_enemy(xpos, ypos)
+	enemy =
+	{
+		x = xpos,
+		y = ypos,
+		turrRot = 0,
+		bodyRot = 0,
+		ltrack = SDL.get_ticks(),
+		eturnDir = 0,
+		emoveDir = 0,
+		-- Surfaces --
+		bodySurf = SDL.surface_load("sprites/enemy/tankbase.png"),
+		turrSurf = SDL.surface_load("sprites/enemy/tanknozzle.png"),
+		tankTrack = SDL.surface_load("sprites/enemy/tanktrack.png"),
+		-- Sounds --
+		-- Functions --
+		update = function(self)
+			if(self.eturnDir == "1") then
+				self.bodyRot = self.bodyRot + 1
+			end
+			if(self.eturnDir == "2") then
+				self.bodyRot = self.bodyRot - 1
+			end
+
+			if(self.emoveDir == "1") then
+				self.x = self.x + math.cos(math.rad((self.bodyRot*-1)-90))*1.2
+				self.y = self.y + math.sin(math.rad((self.bodyRot*-1)-90))*1.2	
+				if(SDL.get_ticks()>self.ltrack+50) then
+					self.tankTrack.x = self.x
+					self.tankTrack.y = self.y
+					self.tankTrack.rot = self.bodyRot
+					self.tankTrack:blit(globals.levelSurf)
+					self.ltrack = SDL.get_ticks()
+				end
+			end
+			if(self.emoveDir == "2") then
+				self.x = self.x + math.cos(math.rad((self.bodyRot*-1)-90))*-1.2
+				self.y = self.y + math.sin(math.rad((self.bodyRot*-1)-90))*-1.2			
+				if(SDL.get_ticks()>self.ltrack+50) then
+					self.tankTrack.x = self.x
+					self.tankTrack.y = self.y
+					self.tankTrack.rot = self.bodyRot
+					self.tankTrack:blit(globals.levelSurf)
+					self.ltrack = SDL.get_ticks()
+				end
+			end
+			self.bodySurf.x = self.x
+			self.bodySurf.y = self.y
+			self.bodySurf.rot = self.bodyRot
+			self.turrSurf.x = self.x
+			self.turrSurf.y = self.y
+			self.turrSurf.rot = self.turrRot
+			self.bodySurf:blit()
+			self.turrSurf:blit()
+		end
+	}
+	return enemy
+end

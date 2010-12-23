@@ -1,0 +1,16 @@
+Game.name = "Test 3"
+
+Game.w = 640
+Game.h = 480
+
+mod = nil
+--80megamix.mod  Stargazer_Shampoo.mod  music.xm   supermar.mod
+--DEADLOCK.XM    Zapped-out.mod         snake.mod
+function on_init()
+	mod = SDL.music_load("music/Stargazer_Shampoo.mod");
+	mod:play()
+end
+
+function on_update()
+
+end

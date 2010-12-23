@@ -1,0 +1,155 @@
+---------------------------------------------
+--    Gojo Gui Library  -  By Feesh!       --
+---------------------------------------------
+
+function new_window(xp, yp, wp, hp)
+	window = 
+	{
+		children = {},
+		x = 0,
+		y = 0,
+		w = 0,
+		h = 0,
+		dx = 0,
+		dy = 0,
+		dragging = false,
+		mdown = false,
+		update = function(self)
+			mx, my, button = SDL.get_mouse(1)
+			if(mx>self.x+3 and mx<self.x+self.w-6 and my > self.y+3 and my<self.y+24 and button == 1 and self.dragging == false and self.mdown == false) then -- Begin dragging! -- Have mdown to prevent sweeping the mouse and mistakenly pickign up the window
+				self.dx = mx-self.x -- Get the offset of the mouse when it was clicked on the bar
+				self.dy = my-self.y
+				self.dragging = true
+			end
+			if(button == 1) then
+				self.mdown = true
+				if(self.dragging) then
+					self.x = mx-self.dx
+					self.y = my-self.dy
+				end
+			else
+				self.mdown = false
+				self.dragging = false
+			end
+			
+			SDL.draw_rect(self.x, self.y, self.w, self.h, "#ff8800", "black")
+			SDL.draw_rect(self.x+3, self.y+3, self.w-6, 24, "#0088ff", "black")
+			if(self.children[0] ~= nil) then
+				for cchild = 0, #self.children, 1 do
+					self.children[cchild]:update()
+				end
+			end
+		end,
+		add_child = function(self, newchild)
+			table.insert(self.children,0,newchild)
+			newchild.parent = self
+		end,
+		destroy = function(self)
+			
+		end
+	}
+	window.x = xp
+	window.y = yp
+	window.w = wp
+	window.h = hp
+	return window
+end
+
+function new_button(xp, yp, wp, hp)
+	button = 
+	{
+		x = 0,
+		y = 0,
+		w = 0,
+		h = 0,
+		down = false,
+		on_press = nil,
+		on_release = nil,
+		parent = { x = 0, y = 0 }, -- Add a phony parent just so we don't have to keep if'ing 
+		update = function(self)
+			mx, my, button = SDL.get_mouse(1)
+			if(mx>self.x+self.parent.x and mx<self.x+self.w+self.parent.x and my > self.y+self.parent.y and my<self.y+self.parent.y+self.h and button == 1 and self.down == false) then -- Clicked in the button!
+				self.down = true
+				if(self.on_press~=nil) then
+					self.on_press(self)
+				end
+			elseif(mx>self.x+self.parent.x and mx<self.x+self.w+self.parent.x and my > self.y+self.parent.y and my<self.y+self.parent.y+self.h and button == 0 and self.down == true) then -- Button released!
+				self.down = false
+				if(self.on_release~=nil) then
+					self.on_release(self)
+				end
+			elseif(button == 0) then
+				self.down = false -- released outside
+			end
+			-- Make sure we need to draw it! 
+			if(self.x+self.parent.x+self.w>0 and self.y+self.parent.y+self.h>0 and self.x+self.parent.x<Game.w and self.y+self.parent.y<Game.h) then
+				if(self.down) then
+					SDL.draw_rect(self.x+self.parent.x, self.y+self.parent.y, self.w, self.h, "blue", "black")
+				else
+					SDL.draw_rect(self.x+self.parent.x, self.y+self.parent.y, self.w, self.h, "green", "black")
+				end
+			end
+		end,
+		set_on_press = function(self, functor)
+			self.on_press = functor
+		end,
+		set_on_release = function(self, functor)
+			self.on_release = functor
+		end,
+		destroy = function(self)
+		end
+	}
+	button.x = xp
+	button.y = yp
+	button.w = wp
+	button.h = hp
+	return button
+end
+
+function new_checkbox(xp, yp, text)
+	checkbox = 
+	{
+		x = 0,
+		y = 0,
+		w = 0,
+		h = 0,
+		text = nil,
+		mdown = false,
+		checked = false,
+		parent = { x = 0, y = 0 }, -- Add a phony parent just so we don't have to keep if'ing 
+		init = function(self)
+			-- TODO: Calculate width with text- for testing it'll be 24 by 24
+			-- CREATE TEXT SURFACE ETC
+			self.w = 24
+			self.h = 24
+		end,
+		update = function(self)
+			mx, my, button = SDL.get_mouse(1)
+			if(mx>self.x+self.parent.x and mx<self.x+self.w+self.parent.x and my > self.y+self.parent.y and my<self.y+self.parent.y+self.h and button == 1 and self.mdown == false) then 
+				self.mdown = true
+				if(self.checked) then
+					self.checked = false
+				else
+					self.checked = true
+				end
+			end
+			if(button == 0) then
+				self.mdown = false
+			end
+			-- Make sure we need to draw it! 
+			if(self.x+self.parent.x+self.w>0 and self.y+self.parent.y+self.h>0 and self.x+self.parent.x<Game.w and self.y+self.parent.y<Game.h) then
+				SDL.draw_rect(self.x+self.parent.x, self.y+self.parent.y, self.w, self.h, "white", "black")
+				if(self.checked) then
+					SDL.draw_rect(self.x+self.parent.x+4, self.y+self.parent.y+4, self.w-8, self.h-8, "blue", "black")
+				end
+			end
+		end,
+		destroy = function(self)
+		end
+	}
+	checkbox.x = xp
+	checkbox.y = yp
+	checkbox.text = text
+	checkbox:init()
+	return checkbox
+end

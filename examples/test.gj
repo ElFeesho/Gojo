@@ -1,0 +1,77 @@
+Game.name = "Test Game"
+Game.author = "Feesh!"
+Game.w = 640
+Game.h = 480
+Game.audio = 0
+Game.update_tick = 10
+
+testImage = nil
+
+menuText = nil
+menuText2 = nil
+menu_fnt = nil
+
+SDL_logo = nil
+
+selected = 1
+
+incDir = 0.1
+
+sdl_scale = 2.55
+
+function on_init()
+	if(SDL_logo==nil) then
+		SDL_logo = SDL.surface_load("images/logo.png")
+		SDL_logo.x = Game.w/2-SDL_logo.w/2
+		SDL_logo.y = 30
+	end
+	font_fnt = SDL.text_load("fonts/arial.ttf",24)
+	collectgarbage("collect")
+	menuText = font_fnt:create(100,200,"#ff9900","Menu Item 1")
+	menuText2 = font_fnt:create(100,250,"#f90","Menu Item 2")
+	menuText.alpha = 128
+end
+
+function on_update(ticks)
+	SDL.draw_rect(0,0,Game.w, Game.h, "white")
+	SDL_logo:blit()
+	
+	if(selected == 1) then
+		menuText2.scale = 1.0
+		menuText.scale = menuText.scale + incDir
+		menuText.alpha = menuText.alpha + incDir*50
+		if(menuText.scale > 1.5) then
+			incDir = -0.025
+		elseif(menuText.scale < 1.0) then
+			incDir = 0.025
+		end
+	else
+		menuText.scale = 1.0
+		menuText2.scale = menuText2.scale + incDir
+		if(menuText2.scale > 1.5) then
+			incDir = -0.025
+		elseif(menuText2.scale < 1.0) then
+			incDir = 0.025
+		end
+	end
+	menuText:blit()
+	menuText2:blit()
+	for i = 0,3,1 do
+		SDL_logo.scale = SDL_logo.scale - 0.10*i
+		SDL_logo.x = i * SDL_logo.w + 50
+		SDL_logo.y = Game.h - SDL_logo.h - 30
+		SDL_logo:blit()
+		SDL.draw_line(SDL_logo.x, SDL_logo.y-10, SDL_logo.x, SDL_logo.y+10,"black")
+		SDL.draw_line(SDL_logo.x-10, SDL_logo.y, SDL_logo.x+10, SDL_logo.y,"black")
+		SDL.draw_line(SDL_logo.x+(SDL_logo.w*SDL_logo.scale)/2, SDL_logo.y+(SDL_logo.h*SDL_logo.scale)/2-5, SDL_logo.x+(SDL_logo.w*SDL_logo.scale)/2, SDL_logo.y+(SDL_logo.h*SDL_logo.scale)/2+5,"red")
+		SDL.draw_line(SDL_logo.x+(SDL_logo.w*SDL_logo.scale)/2-5, SDL_logo.y+(SDL_logo.h*SDL_logo.scale)/2, SDL_logo.x+(SDL_logo.w*SDL_logo.scale)/2+5, SDL_logo.y+(SDL_logo.h*SDL_logo.scale)/2,"red")
+	end
+	SDL_logo.scale = 1.0 
+	SDL_logo.x = Game.w / 2 - SDL_logo.w / 2
+	SDL_logo.y = 30
+	SDL.draw_line(Game.w / 2, Game.h / 2, Game.w/2 + math.cos(ticks/100)*50, Game.h / 2 +math.sin(ticks/100)*50, "#f00")
+	if(SDL.get_key(273) or SDL.get_key(274)) then
+		selected = 1 - selected
+	end
+end
+

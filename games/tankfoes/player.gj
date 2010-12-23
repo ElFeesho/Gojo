@@ -1,0 +1,150 @@
+----------------------------------
+-- Player Tank 'Class'          --
+----------------------------------
+
+function new_player(xpos, ypos)
+	player =
+	{
+		x = xpos,
+		y = ypos,
+		turrRot = 0,
+		bodyRot = 360,
+		ltrack = SDL.get_ticks(),
+		lttick = SDL.get_ticks(),
+		ltRot = 0,
+		turnDir = 0,
+		moveDir = 0,
+		-- DIRTY HACK, WAHHHH, WAHHHH (that's an alarm..) --
+		ltrans = SDL.get_ticks(),
+		-- Surfaces --
+		bodySurf = new_sprite("sprites/player/base.spr"),
+		turrSurf = new_sprite("sprites/player/turret.spr"),
+		turrShad = new_sprite("sprites/player/turretshd.spr"),
+		-- Sounds --
+		-- Functions --
+		update = function(self)
+			if(SDL.get_key(276) and self.turnDir == 0) then
+				self.turnDir = 1
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("turn 1 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot,true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+			if(SDL.get_key(275) and self.turnDir == 0) then
+				self.turnDir = 2
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("turn 2 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot,true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+			if(SDL.get_key(276) == false and self.turnDir == 1) then
+				self.turnDir = 0
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("turn 0 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot, true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+			if(SDL.get_key(275) == false and self.turnDir == 2) then
+				self.turnDir = 0
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("turn 0 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot, true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+
+			if(SDL.get_key(273) and self.moveDir == 0) then
+				self.moveDir = 1
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("move 1 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot,true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+
+			if(SDL.get_key(273) == false and self.moveDir == 1) then
+				self.moveDir = 0
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("move 0 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot, true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+
+			if(SDL.get_key(274) and self.moveDir == 0) then
+				self.moveDir = 2
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("move 2 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot, true)
+				end
+				self.lttick = SDL.get_ticks()				
+			end
+
+			if(SDL.get_key(274) == false and self.moveDir == 2) then
+				self.moveDir = 0
+				if(Game.net == 1) then
+					globals.socket_handle:sendstring("move 0 "..self.x.." "..self.y.." "..self.bodyRot.." "..self.turrRot, true)
+				end
+				self.lttick = SDL.get_ticks()
+			end
+
+			if(self.turnDir == 1) then
+				self.bodyRot = self.bodyRot - 1
+				if(self.bodyRot<0) then
+					self.bodyRot = 360
+				end
+			end
+			if(self.turnDir == 2) then
+				self.bodyRot = self.bodyRot + 1
+				if(self.bodyRot>360) then
+					self.bodyRot = 0
+				end
+			end
+
+			if(self.moveDir == 1) then
+				self.x = self.x + math.cos(math.rad((self.bodyRot)+90))*1.2
+				self.y = self.y + math.sin(math.rad((self.bodyRot)+90))*0.864
+			end
+			if(self.moveDir == 2) then
+				self.x = self.x + math.cos(math.rad((self.bodyRot)+90))*-1.2
+				self.y = self.y + math.sin(math.rad((self.bodyRot)+90))*-0.864
+			end
+			local mx, my, mb
+			mx, my, mb = SDL.get_mouse(1)
+			mx = mx + globals.map.cx
+			my = my + globals.map.cy
+			-- Draw helpful triangle :D
+			SDL.draw_line(self.x+80, self.y+80,mx,my,"white") -- hypot
+			SDL.draw_line(mx, self.y+80,mx,my,"white") -- Opposite
+			SDL.draw_line(mx, self.y+80,self.x+80,self.y+80,"white") -- Adjacent
+			opp = self.y+80 - my
+			adj = self.x+80-mx
+			angle = math.floor(math.deg(math.atan(opp/adj)))
+			if(mx>self.x+80) then
+			--	print("Turr: "..self.turrRot)
+				self.turrRot = 270+angle
+			else
+				self.turrRot = 90+angle
+			end
+			if(self.turrRot<0) then
+				self.turrRot = 360+self.turrRot
+			elseif(self.turrRot>359) then
+				self.turrRot = self.turrRot-360
+			end
+			if(SDL.get_ticks()>self.lttick+300 and Game.net == 1) then
+				globals.socket_handle:sendstring("turret "..self.turrRot.." "..self.x.." "..self.y.." "..self.bodyRot, true)
+				self.lttick = SDL.get_ticks()
+			end
+			self.bodySurf:set_currentframe(math.floor(self.bodyRot/11.4)+1)
+			self.turrSurf:set_currentframe(math.floor(self.turrRot/11.4)+1)
+			if(self.bodySurf.current_frame == 32) then
+				self.bodySurf:set_currentframe(0)
+			end
+			if(self.turrSurf.current_frame == 32) then
+				self.turrSurf:set_currentframe(0)
+			end
+			self.bodySurf:set_pos(self.x, self.y)
+			self.turrSurf:set_pos(self.x, self.y)
+			globals.map:focus_to(self.x, self.y)
+			self.bodySurf:draw(globals.map:get_canvas())
+			self.turrSurf:draw(globals.map:get_canvas())
+		end
+	}
+	return player
+end

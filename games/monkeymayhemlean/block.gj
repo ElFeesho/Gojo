@@ -1,0 +1,37 @@
+function new_block(xpos, ypos, content, hidden)
+	local block =
+	{
+		x=xpos,
+		y=ypos,
+		conts=content,
+		presprite=nil,
+		hit=false,
+		hid=hidden,
+		update=function(self) 
+			if(globals.cs.player.yspeed<0 and globals.cs.player.y>self.y+24) then
+				if((globals.cs.player.x+12<self.x+24 and globals.cs.player.x+12>self.x) or (globals.cs.player.x+35<self.x+24 and globals.cs.player.x+35>self.x)) then
+					if(globals.cs.player.y+globals.cs.player.yspeed<self.y+24) then
+						self.hit=true
+						globals.cs.player.y=self.y+24
+						globals.cs.player.yspeed=1
+						if(self.hid) then 
+							globals.cs.map.colset:blit_area(0,24,24,24,self.x,self.y,globals.cs.map.cmap)
+							globals.cs.map.tileset:blit_area(0,24,24,24,self.x,self.y,globals.cs.map.layers[0])
+							return false
+						end
+						self.presprite:destroy()
+						return false
+					end
+				end
+			end
+			if(not self.hid) then
+				self.presprite:draw_and_update(self.x, self.y, globals.cs.map:get_canvas())
+			end
+			return true
+		end
+	}
+	if(not hidden) then
+		block.presprite=new_sprite("sprites/objs/block.spr")
+	end
+	return block
+end

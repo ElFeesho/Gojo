@@ -1,0 +1,60 @@
+function new_network()
+	network =
+	{
+		title = nil,
+		keyboard = nil,
+		start_text = nil,
+		host = nil,
+		user = nil,
+		pass = nil,
+		font = nil,
+		font_desc = nil,
+		init =
+		function(self)
+			self.font = SDL.text_load("gjfont.ttf",16)
+			self.font_desc = SDL.text_load("arial.ttf", 12)
+			self.title = SDL.text_create(0,0,self.font,"black","Network Play")
+			-- Font won't be used again so trash it
+			SDL.text_destroy(self.font)
+			self.title.x = Game.w/2 - self.title.w/2
+			self.title.y = 8
+			self.keyboard = new_geeboard(32,64)
+		end,
+		
+		update
+		= function(self, ticks)
+			SDL.draw_rect(0,0,Game.w, Game.h,"white")
+			SDL.surface_blit(self.title)
+			if(self.host==nil) then
+				SDL.text_draw(16,32,self.font_desc,"black","Enter a the host you wish to connect to!")
+				if(self.keyboard:update()==1) then
+					self.host = self.keyboard.string
+					print("HOST: "..self.host)
+					self.keyboard.string = ""
+				end
+			elseif(self.user == nil) then
+				SDL.text_draw(16,32,self.font_desc,"black","Enter your username")
+				if(self.keyboard:update()==1) then
+					self.user = self.keyboard.string
+					print("User: "..self.user)
+					self.keyboard.string = ""
+				end			
+			elseif(self.pass == nil) then
+				SDL.text_draw(16,32,self.font_desc,"black","Enter your password")
+				if(self.keyboard:update()==1) then
+					self.pass = self.keyboard.string
+					print("PASS: "..self.pass)
+					self.keyboard.string = ""
+				end
+			else
+				if(globals.connected ~= 1) then
+					SDL.text_draw(16,32,self.font_desc,"black","Connecting to "..self.host)
+				else
+				end
+			end
+			return 1
+		end,
+	}
+	network:init()
+	return network
+end

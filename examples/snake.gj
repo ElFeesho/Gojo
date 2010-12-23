@@ -1,0 +1,240 @@
+-- Snake! 
+
+Game.name = "Snake"
+Game.author = "Feesh!"
+
+Game.w = 640
+Game.h = 480
+Game.bpp = 16
+Game.fullscreen = 0
+Game.update_tick = 75
+--Generate a random seed for the apples
+math.randomseed(os.time())
+
+board = {}
+board.x = 10
+board.y = 20
+board.w = math.floor((Game.w - 20)/20)*20
+board.h = math.floor((Game.h - 30)/20)*20
+board.sw = 1
+board.cols = {}
+board.cols.fg = "#000"
+board.cols.bg = "#ddd"
+
+apple = {}
+apple.w = 20
+apple.h = 20
+
+snake = {} 
+
+apple_img = nil
+
+pause = 0
+score = 0
+sncount = 5
+gameover = 0
+can_change = 1
+can_unpause = 1
+dir = 3 -- 0 up, 1, down, 2 left, 3 right
+
+barriers = 0
+
+last_time = 0
+
+-- Font
+score_fnt = nil
+pause_fnt = nil
+gover_fnt = nil
+-- Music
+music = nil
+
+-- Sound
+chomp = nil
+
+function eat_apple()
+	if(chomp~=nil) then
+		SDL.sound_play(chomp)
+	end
+	score = score + 1
+	sncount = sncount+1
+	snake[sncount] = {}
+	snake[sncount].x = snake[sncount-1].x
+	snake[sncount].y = snake[sncount-1].y
+	snake[sncount].w = snake[sncount-1].w
+	snake[sncount].h = snake[sncount-1].h
+	snake[sncount].cols = {}
+	snake[sncount].cols.fg = snake[sncount-1].cols.fg
+	snake[sncount].cols.bg = snake[sncount-1].cols.bg
+	ok_apple = false
+	while (ok_apple == false) do
+		apple_img.x = math.random(0,(math.floor((Game.w -20)/20)-1))*20+10
+		apple_img.y = math.random(0,(math.floor((Game.h -30)/20)-1))*20+20
+		ok_apple = true
+		for cseg = 0, #snake, 1 do
+			if(snake[cseg].x == apple_img.x and snake[cseg].y == apple_img.y) then
+				ok_apple = false
+				break
+			end
+		end
+	end
+end
+
+function game_over()
+	gameover = 1
+	SDL.music_fade_out(1000)
+	for cseg = 0, #snake, 1 do
+		snake[cseg] = nil
+	end
+	SDL.draw_rect(board.x, board.y, board.w, board.h, "#ffffff","black")
+end
+
+function restart(widget)
+	sncount = 5
+	on_init()
+	dir = 3
+	gameover = 0
+	score = 0
+end
+
+function on_init()
+	SDL.mouse_hide()
+	if(apple_img == nil) then
+		apple_img = SDL.surface_load("images/apple.png")
+		apple_img.x = math.random(0,(math.floor((Game.w -20)/20))-1)*20+10
+		apple_img.y = math.random(0,(math.floor((Game.h -30)/20))-1)*20+20
+	end
+	for cseg = 0,sncount,1 do
+		snake[cseg] = {}
+		snake[cseg].cols = {}
+		snake[cseg].x = (math.floor((Game.w/2)/20)*20 - (20*cseg))+10
+		snake[cseg].y = math.floor((Game.h/2)/20)*20
+		snake[cseg].w = 20
+		snake[cseg].h = 20
+	end
+	if(music == nil) then
+		music = SDL.music_load("music/snake.mod")
+	end
+	SDL.music_fade_in(music, -1, 1500)
+	if(chomp == nil) then
+		chomp = SDL.sound_load("sounds/chomp.ogg")
+	end
+	if(score_fnt == nil) then
+		score_fnt = SDL.text_load("fonts/arial.ttf",12)
+	end
+	if(pause_fnt == nil) then
+		pause_fnt = SDL.text_load("fonts/arial.ttf",32)
+	end
+	if(gover_fnt == nil) then
+		gover_fnt = SDL.text_load("fonts/arial.ttf",32)
+	end
+	
+
+end
+
+function on_update(time)
+	if(can_change == 1) then
+		if(SDL.get_key(273) and dir~=1) then
+			dir = 0
+			can_change = 0
+		elseif(SDL.get_key(274) and dir~=0) then
+			dir = 1
+			can_change = 0
+		elseif(SDL.get_key(276) and dir~=3) then
+			dir = 2
+			can_change = 0
+		elseif(SDL.get_key(275) and dir~=2) then
+			dir = 3
+			can_change = 0
+		end
+		if(SDL.get_key(string.byte("p"))) then
+			if(can_unpause==1) then
+				can_unpause=0
+				if(pause == 0) then
+					pause = 1
+					SDL.music_pause()
+					SDL.sound_pause_all()
+				else
+					SDL.music_resume()
+					SDL.sound_resume_all()
+					pause = 0
+				end
+			end
+		else
+			can_unpause = 1
+		end
+	end
+	can_change = 1
+	last_time = time
+	if(gameover==0) then
+		SDL.draw_rect(0,0, Game.w, Game.h, "#0099ff")
+		SDL.draw_rect(board.x, board.y, board.w, board.h, "#ffffff","black")
+		if(gameover == 0) then	
+			if(pause == 0) then
+				score_fnt:draw(10,0, "#000000", "Score: "..score)
+				for cseg = #snake,0,-1 do
+					if(cseg~=0) then
+						snake[cseg].x = snake[cseg-1].x
+						snake[cseg].y = snake[cseg-1].y
+						if(snake[0].x == snake[cseg].x and snake[0].y == snake[cseg].y and cseg>1) then
+							game_over()
+							return
+						end
+					else
+						if(dir == 0) then
+							snake[0].y = snake[0].y - 20
+						end
+						if(dir == 1) then
+							snake[0].y = snake[0].y + 20
+						end
+						if(dir == 2) then
+							snake[0].x = snake[0].x - 20
+						end
+						if(dir == 3) then
+							snake[0].x = snake[0].x + 20
+						end
+						if(snake[0].x < board.x or snake[0].y < board.y or snake[0].x >= board.x+board.w or snake[0].y >= board.y+board.h) then
+							if(barriers == 1) then
+								game_over()
+								return
+							else
+								if(snake[0].x < board.x) then
+									snake[0].x = board.x+board.w-20
+								end
+								if(snake[0].y < board.y) then
+									snake[0].y = board.y+board.h-20
+								end
+								if(snake[0].x >= board.x+board.w) then
+									snake[0].x = board.x
+								end
+								if(snake[0].y >= board.y+board.h) then
+									snake[0].y = board.y
+								end
+							end
+						end
+						if(snake[0].x == apple_img.x and snake[0].y == apple_img.y) then
+							eat_apple()
+						end
+					end
+					SDL.draw_rect(snake[cseg].x, snake[cseg].y, snake[cseg].w, snake[cseg].h, "#ff9900","black")
+				end
+				SDL.surface_blit(apple_img)
+			else
+					SDL.text_draw(Game.w/2-50,Game.h/2-30,pause_fnt,"#000000","Paused (P)")
+			end
+		end
+	else
+		gover_fnt:draw(Game.w/2-50,Game.h/2-15,"black","Gameover")
+		if(SDL.get_key(27)) then
+			SDL.quit()
+		end
+	end
+end
+
+function on_quit()
+	SDL.surface_destroy(apple_img)
+	SDL.text_destroy(score_fnt)
+	SDL.text_destroy(pause_fnt)
+	SDL.text_destroy(gover_fnt)
+	SDL.music_destroy(music)
+	SDL.sound_destroy(chomp)
+end

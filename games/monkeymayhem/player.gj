@@ -1,0 +1,128 @@
+function new_player()
+	local player = 
+	{
+		sprites = {},
+		x = 32,
+		y = 380,
+		xspeed = 0,
+		yspeed = 0,
+		dir = 1,
+		jumped = 0,
+		onGround = 0,
+		isWalking = 0,
+		gravity = 0.8,
+		init = function(self)
+			self.sprites[0] = new_sprite("sprites/player/lstand.spr")
+			self.sprites[1] = new_sprite("sprites/player/lwalk.spr")
+			self.sprites[2] = new_sprite("sprites/player/rstand.spr")
+			self.sprites[3] = new_sprite("sprites/player/rwalk.spr")
+		end,
+		update = function(self)			
+			if(SDL.get_key(32) and self.onGround == 1 and self.jumped == 0) then -- UP
+				self.onGround = 0
+				self.yspeed = -30
+				self.jumped = 1
+			end
+			if(self.onGround == 1 and not SDL.get_key(32)) then
+				self.jumped = 0	-- Prevent bunny hopping
+			end
+			if(SDL.get_key(275)) then -- Right
+				self.dir = 1
+				self.isWalking = 1
+			end
+			if(SDL.get_key(276)) then -- Left
+				self.dir = 0
+				self.isWalking = 1
+			end
+			if(not SDL.get_key(275) and not SDL.get_key(276)) then
+				self.isWalking = 0
+			end
+
+			if(self.isWalking == 1) then
+				if(self.dir==1) then
+					if(self.xspeed<5) then
+						self.xspeed = self.xspeed + (0.5+(self.onGround*0.25))
+						if(self.xspeed > 5) then
+							self.xspeed = 5
+						end
+					end
+				else
+					if(self.xspeed>-5 and self.dir == 0) then
+						self.xspeed = self.xspeed -(0.5+(self.onGround*0.25))
+						if(self.xspeed < -5) then
+							self.xspeed = -5
+						end
+					end
+				end
+			elseif(self.onGround == 1) then
+				if(self.xspeed > 0) then
+					self.xspeed = self.xspeed -0.35
+				else
+					self.xspeed = self.xspeed + 0.35
+				end
+				if(self.xspeed < 0.5 and self.xspeed > -0.5) then
+					self.xspeed = 0
+				end
+			end
+			if(self.yspeed<7 and self.onGround ==0) then
+				if(self.yspeed<0) then
+					self.yspeed = self.yspeed*self.gravity+0.2
+				else
+					self.yspeed = self.yspeed/self.gravity+0.2
+				end
+			end
+
+			gridy = math.floor(self.y/24)*24
+			
+			if(self.onGround == 1) then
+				if(not globals.current_scene.map:coliding(self.x+19+self.xspeed,self.y+48) and not globals.current_scene.map:coliding(self.x+27+self.xspeed,self.y+48)) then
+					self.onGround = 0
+					self.yspeed = 0
+					self.y = gridy
+				end
+			end
+			if(self.onGround == 0 and self.yspeed>0) then -- Falling off a ledge
+				coltiley = math.floor((self.y+self.yspeed+48)/24)*24
+				if(globals.current_scene.map:coliding(self.x+19+self.xspeed,coltiley) or globals.current_scene.map:coliding(self.x+27+self.xspeed,coltiley)) then
+					if(math.floor(self.y+48) <= coltiley) then
+						self.onGround = 1
+						self.yspeed = 0
+						self.y = coltiley-48
+					end
+				end
+			elseif(self.onGround == 0 and self.yspeed<0) then -- Player jumps up into a block
+				coltiley = math.floor((self.y+self.yspeed)/24)*24
+				if(globals.current_scene.map:coliding(self.x+19,coltiley) or globals.current_scene.map:coliding(self.x+27,coltiley)) then
+					if(math.floor(self.y) >= coltiley) then
+						self.yspeed = 1
+						self.y = coltiley+24
+					end
+				end
+			end
+			if(self.xspeed>0 and (globals.current_scene.map:coliding(self.x+28+self.xspeed,self.y) or globals.current_scene.map:coliding(self.x+28+self.xspeed,self.y+24) or globals.current_scene.map:coliding(self.x+28+self.xspeed,self.y+47))) then
+				-- If it will collide in the next X update, find the difference between the collision point and our xposition and add them!
+				colx = math.floor((self.x+28+self.xspeed)/24)*24
+				self.x = self.x+(colx-self.x)-28
+				self.xspeed = 0
+				self.isWalking = 0
+			elseif(self.xspeed<0 and (globals.current_scene.map:coliding(self.x+18+self.xspeed,self.y) or globals.current_scene.map:coliding(self.x+18+self.xspeed,self.y+24) or globals.current_scene.map:coliding(self.x+18+self.xspeed,self.y+47))) then
+				colx = math.floor((self.x+18+self.xspeed)/24)*24
+				self.x = self.x+(colx-self.x)+6
+				self.xspeed = 0
+				self.isWalking = 0
+			end
+			self.x = self.x+self.xspeed
+			if(self.x<0) then
+				self.x = 0
+			elseif(self.x+48>globals.current_scene.map.layers[0].w) then
+				self.x = globals.current_scene.map.layers[0].w-48
+			end
+			if(self.onGround == 0) then
+				self.y = self.y + self.yspeed
+			end
+			self.sprites[self.dir*2+self.isWalking]:draw_and_update(self.x, self.y, globals.current_scene.map:get_canvas())
+		end
+	}
+	player:init()
+	return player
+end

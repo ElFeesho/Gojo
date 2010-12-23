@@ -1,0 +1,66 @@
+Game.name = "Tank Foes"
+Game.author = "Feesh!"
+Game.desc = "Tank Foes - a Clone of Enemy Tanks"
+
+Game.w = 640
+Game.h = 480
+Game.fullscreen = 0
+Game.update_tick = 10
+Game.audio = 0
+Game.net = 0
+
+-- Modules --
+
+require("globals")
+
+require("modules/sprite")
+require("modules/bfont")
+require("modules/tilemap")
+require("player")
+-- Globals --
+
+globals.socket_set = nil
+globals.socket_handle = false
+
+ox = 0
+oy = 0
+orot = 0
+
+ltick = 0
+
+connect_fnt = nil
+connected = false
+givenup = false
+initd = false
+
+function on_init()
+	globals.levelTile = SDL.surface_load("rsrcs/bg.png")
+	globals.levelSurf = SDL.surface_create(0,0,1280,960)
+	globals.levelTile:blit(0,0,0,1.0,globals.levelSurf)
+	globals.levelTile:blit(640,0,0,1.0,globals.levelSurf)
+	globals.levelTile:blit(0,480,0,1.0,globals.levelSurf)
+	globals.levelTile:blit(640,480,0,1.0,globals.levelSurf)
+	globals.playerTank = new_player(640/4-16, 240-32)
+	connect_fnt = new_bfont("rsrcs/bitmapfont.png",14,22,"!.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",3)
+	globals.map = new_tilemap("map.gjm")
+	globals.musicHandle = SDL.music_load("rsrcs/music.mod")
+	SDL.music_play(globals.musicHandle)
+end
+
+function on_update(ticks)
+	SDL.draw_rect(0,0,Game.w, Game.h, "black")
+	globals.map:clear_canvas()
+	globals.map:draw_from(0)
+	globals.playerTank:update()
+	globals.map:draw_to(1)
+	globals.levelSurf:blit_area(globals.map.cx,globals.map.cy,640,480,0,0)
+	globals.map:draw()
+	draw_radar()
+	if(SDL.get_key(27)) then
+		SDL.quit()
+   end
+end
+
+function draw_radar()
+	
+end
