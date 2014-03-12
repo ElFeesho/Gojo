@@ -82,20 +82,22 @@ static char *parse_cmd(char *line, struct lua_State *l)
 	lua_remove(l,-1);
 	free(lua_path);
 #else
-	if(strrchr(line,'\')==NULL)
-		strcpy(working_dir,".\");
+	if(strrchr(line,'\\')==NULL)
+	{
+		strcpy(working_dir,".\\");
+	}
 	else
 	{
-		if(line[1]!=':') /* C:\ ... don't think you can have : in filenames in windows  */ 
+		if(line[1]!=':') 
 		{
-			strcpy(working_dir,".\");
+			strcpy(working_dir,".\\");
 			strcat(working_dir, line);
 		}
 		else
 		{
 			strcpy(working_dir,line);
 		}
-		strcpy(strrchr(working_dir,'\')+1,"\0");
+		strcpy(strrchr(working_dir,'\\')+1,"\0");
 	}
 	char *lua_path = strdup(working_dir);
 	strcat(lua_path,"?.gj");
@@ -133,11 +135,18 @@ static void clean_up()
 
 char *split_string(char *string, unsigned int position)
 {
-	if(position<strlen(string))
+	if(position < strlen(string))
 	{
-		while(string[position] != ' ') position--;
-		char *ret_string = string+position+1;
-		while(*ret_string==' ') ret_string++;
+		while(string[position] != ' ')
+		{
+			position--;
+		}
+
+		char *ret_string = string + position + 1;
+		while(*ret_string==' ')
+		{
+			ret_string++;
+		}
 		string[position] = '\0';
 		return ret_string;
 	}
@@ -168,8 +177,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	int err = 0;						/* Used for checking any errors from lua */
-	int quit = 0;						/* Used for infinite loop */
+	int err = 0;					/* Used for checking any errors from lua */
+	int quit = 0;					/* Used for infinite loop */
 	int last_tick = 0;				/* Last time the lua vm was updated */
 	int flags = 0;
 	
@@ -180,7 +189,7 @@ int main(int argc, char **argv)
 	
 	/* Create a lua state - stores all the interpreter jive (variables, functions, tables etc) */
 	
-	struct lua_State *lua_vm = lua_open();
+	struct lua_State *lua_vm = luaL_newstate();
 	
 	/* Standard lua libs (maths, os, table and so on) */
 	luaL_openlibs(lua_vm);
@@ -234,7 +243,7 @@ int main(int argc, char **argv)
 	lua_getfield(lua_vm, -10, "hw");
 	lua_remove(lua_vm, -11);
 	
-	if(lua_isnil(lua_vm,-10)||lua_isnil(lua_vm,-9))
+	if(lua_isnil(lua_vm, -10) || lua_isnil(lua_vm, -9))
 	{
 		fprintf(stderr, "Couldn't continue running script, no screen dimensions were not set!\n");
 		return 1;
@@ -269,17 +278,25 @@ int main(int argc, char **argv)
 	}
 	
 	if(!lua_isnil(lua_vm, -5))
+	{
 		fullscreen = lua_tointeger(lua_vm, -5);
-	
+	}
+
 	if(!lua_isnil(lua_vm, -4))
+	{
 		vm_timer = lua_tointeger(lua_vm, -4);
-		
+	}
+
 	if(!lua_isnil(lua_vm,-3))
+	{
 		init_audio = lua_tointeger(lua_vm, -3);
-		
+	}
+
 	if(!lua_isnil(lua_vm,-2))
+	{
 		init_net = lua_tointeger(lua_vm, -2);
-	
+	}
+
 	if(!lua_isnil(lua_vm,-1))
 	{
 		if(lua_tointeger(lua_vm, -1)>0)
@@ -316,7 +333,7 @@ int main(int argc, char **argv)
 	
 	/* Set the SDL window's width and height to what we got from the script */
 	
-	if(fullscreen==1)
+	if(fullscreen == 1)
 	{
 		flags |= SDL_FULLSCREEN;
 	}
@@ -339,20 +356,17 @@ int main(int argc, char **argv)
 			joy[i] = SDL_JoystickOpen(i);
 	}
 	
-	SDL_WM_SetCaption(game_name,NULL);
+	SDL_WM_SetCaption(game_name, NULL);
 	
 	int init_errors = 0;
 	
-	#ifdef SDL_TTF
 	if(TTF_Init()<0)
 	{
 		fprintf(stderr,"Failed to initialise TTF: %s\n",TTF_GetError());
 		set_error("ERROR: Failed to initialise TTF!");
 		init_errors = 1;
 	}
-	#endif
 	
-	#ifdef SDL_NET
 	if(init_net)
 	{
 		if(SDLNet_Init()!=0)
@@ -362,9 +376,7 @@ int main(int argc, char **argv)
 			init_errors = 1;
 		}
 	}
-	#endif
 	
-	#ifdef SDL_MIXER
 	if(init_audio)
 	{
 		if(Mix_OpenAudio(44100, AUDIO_S16, 2, 1024))
@@ -374,8 +386,8 @@ int main(int argc, char **argv)
 			init_audio = 0;
 		}
 	}
-	#endif
 	
+
 	/* Before the main loop, call on_init in the script */
 	
 	if(!init_errors)
@@ -387,37 +399,6 @@ int main(int argc, char **argv)
 			set_error((char*)lua_tostring(lua_vm, -1));
 		}	
 	}
-	
-	/* 
-					!!! SET EVENT STATES !!! 
-	
-		Oh god, what are you up to this time you smell feesh.
-		
-		Well, we can tell SDL to ignore certain events, mainly
-		the screen resizing ones and so on that we should never
-		ever, really need. However, as a method of allowing 
-		the toggling of "ON DEMAND NOTIFICATION!" and "EVENT DRIVEN"
-		input information. It will be possible to turn on and off 
-		call back events for: joystick, keyboard and mouse inputs.
-		
-		What this means is, it will be possible in LUA code to have
-		something a long the lines of.
-		
-		x, y, button = SDL.get_mouse_info()
-		print("X: "..x.." Y: "..y.." Button: "..button)
-		-- X: 5 Y: 10 Button: 1
-		
-		if(SDL.get_key(32)) then
-			print("Space is down! :D")
-		else
-			print("Space is not down! D:")
-		end
-	
-		This gives us a more friendly method of creating games. WHere
-		you can check if you need to do something from the same function
-		your in rather than relying on setting extra variables you wouldn't
-		normally want to do. 
-	*/
 	
 	SDL_EventState(SDL_ACTIVEEVENT,SDL_IGNORE);
 	SDL_EventState(SDL_KEYDOWN,SDL_IGNORE);
@@ -435,23 +416,8 @@ int main(int argc, char **argv)
 	SDL_EventState(SDL_USEREVENT,SDL_IGNORE);
 	SDL_EventState(SDL_SYSWMEVENT,SDL_IGNORE);
 	
-	/* 
-		What is this hack?!?
-		Hello, and welcome back to "What is this hack?!?", the comment
-		where you have the chance to guess what is this hack.
-		
-		Well, basically, when SDL initialises a joystick, it sends out
-		a bunch of events as if all the buttons have been pressed on the
-		joystick / gamepad. This isn't good when the program is exitted
-		by a initialisation runtime error- as it immediately closes
-		without you being able to see what error had occured.
-		
-		This hack merely loops through the events on the event queue till
-		they are all gone.
-	 */
-	SDL_Event flush;
-	while(SDL_PollEvent(&flush));
-	
+	//SDL_FlushEvents(SDL_JOYAXISMOTION, SDL_JOYDEVICEREMOVED);
+
 	do
 	{
 		SDL_Event event;
@@ -531,6 +497,7 @@ int main(int argc, char **argv)
 				}
 			}
 		}
+
 		if(!quit)
 		{
 			if(!fatal_error) /* Game speed should be able to set from lua script? */
@@ -544,10 +511,13 @@ int main(int argc, char **argv)
 					set_error((char*)lua_tostring(lua_vm, -1));
 					continue;
 				}
+
 				last_tick = SDL_GetTicks();
 				SDL_Flip(screen);
-				if(vm_timer-(last_tick-ticks)>0)
+				if(vm_timer-(last_tick-ticks)>0) 
+				{
 					SDL_Delay(vm_timer-(last_tick-ticks));
+				}
 			}
 			else if(fatal_error)
 			{
@@ -564,8 +534,12 @@ int main(int argc, char **argv)
 					SDL_FillRect(screen, &pos, SDL_MapRGBA(screen->format, 0x00,0x00,0x00,0x00));
 					
 					draw_error(screen, fatal_error_msg);
+
 					if(fatal_error_line != NULL)
+					{
 						draw_error(screen, fatal_error_line);
+					}
+
 					SDL_Flip(screen);
 				}
 			}

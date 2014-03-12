@@ -67,7 +67,7 @@ function new_tilemap(map_filename, colourkey)
 			self.cmap = SDL.surface_create(0,0,self.w*self.tilew,self.h*self.tileh)
 			for line in map_file:lines() do 
 				if(string.len(line)/2 == self.w and string.byte(line) ~= '#') then -- not a Spacer line / comment line
-					if(math.mod(string.len(line),2)~=0) then
+					if((string.len(line) % 2)~=0) then
 						SDL.send_error("Map file error, a line of tile data isn't even! - it's odd")
 					end
 					if(cur_line>=self.h) then

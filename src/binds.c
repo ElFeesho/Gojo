@@ -4,19 +4,11 @@
 #include <string.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
-#ifdef SDL_GFX
-	#include <SDL/SDL_rotozoom.h>
-	#include <SDL/SDL_gfxPrimitives.h>
-#endif
-#ifdef SDL_TTF
-	#include <SDL/SDL_ttf.h>
-#endif
-#ifdef SDL_MIXER
-	#include <SDL/SDL_mixer.h>
-#endif
-#ifdef SDL_NET
-	#include <SDL/SDL_net.h>
-#endif
+#include <SDL/SDL_rotozoom.h>
+#include <SDL/SDL_gfxPrimitives.h>
+#include <SDL/SDL_ttf.h>
+#include <SDL/SDL_mixer.h>
+#include <SDL/SDL_net.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -29,7 +21,7 @@
 
 /* All the binded functions are listed here with their lua name counter parts */
 
-const luaL_reg sdl_binds[] =
+const luaL_Reg sdl_binds[] =
 {
 	{ "surface_load", BIND_surface_load },
 	{ "surface_create", BIND_surface_create },
@@ -39,17 +31,11 @@ const luaL_reg sdl_binds[] =
 	{ "surface_get_pixel", BIND_surface_get_pixel },
 	{ "surface_destroy", BIND_surface_destroy },
 	{ "draw_rect", BIND_draw_rect },
-	#ifdef SDL_GFX
 	{ "draw_line", BIND_draw_line },
-	#endif
-	#ifdef SDL_TTF
 	{ "text_load", BIND_text_load },
 	{ "text_draw", BIND_text_draw },
 	{ "text_create", BIND_text_create },
 	{ "text_destroy", BIND_text_destroy },
-	#endif
-	#ifdef SDL_MIXER
-
 	{ "music_load", BIND_music_load },
 	{ "music_play", BIND_music_play },
 	{ "music_pause", BIND_music_pause },
@@ -70,8 +56,6 @@ const luaL_reg sdl_binds[] =
 	{ "sound_pause_all", BIND_sound_pause_all },
 	{ "sound_destroy", BIND_sound_destroy },
 
-	#endif
-	#ifdef SDL_NET
 	{ "socket_tcp_connect", BIND_socket_tcp_connect },
 	{ "socket_tcp_host", BIND_socket_tcp_host },
 	{ "socket_tcp_accept", BIND_socket_tcp_accept },
@@ -88,8 +72,7 @@ const luaL_reg sdl_binds[] =
 	{ "socket_set_tcp_remove", BIND_socket_set_tcp_remove },
 	{ "socket_set_destroy", BIND_socket_set_destroy },
 	{ "socket_set_check", BIND_socket_set_check },
-	#endif
-
+	
 	{ "mouse_show", BIND_mouse_show },
 	{ "mouse_hide", BIND_mouse_hide },
 
@@ -2409,5 +2392,7 @@ int BIND_reset_video(struct lua_State *l)
 
 void binds_register(struct lua_State *l)
 {
-	luaL_register(l,"SDL",sdl_binds);
+	lua_newtable(l);
+	luaL_setfuncs(l,sdl_binds, 0);
+	lua_setglobal(l, "SDL");
 }
