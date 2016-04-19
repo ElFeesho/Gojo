@@ -44,3 +44,6 @@ check out Fenix, or if you're so inclined, PyGame. The advantage of Gojo
 is it has few (obscure) dependencies, it's portable and easy to port to new
 systems. The main goals are to run code fast and efficiently and ease of 
 coding games.
+
+## Redesign
+![Proposed Redesign](http://yuml.med4b9240c)
