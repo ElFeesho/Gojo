@@ -44,20 +44,3 @@ check out Fenix, or if you're so inclined, PyGame. The advantage of Gojo
 is it has few (obscure) dependencies, it's portable and easy to port to new
 systems. The main goals are to run code fast and efficiently and ease of 
 coding games.
-
-### Do you need any help?
-
-I've got all the prescriptions I need, but code wise I am fine as well.
-What we could do with is some ideas, nothing huge, just things you would 
-like to see available. If you want to make example scripts or even tutorials,
-everything is more than welcome!
-
-What is needed most is documentation, possibly improved debugging or even a 
-seperate program to debug gojo scripts (which will be easier once a stable 1.0
-reference program is released). Gojo libraries (written in lua) would be an
-excellent way to help out. Libraries for fancy menus, visual effects, and basic
-physics engines would be very useful to us and to other gojo game devs.
-
-## Who made Gojo?
-
-Gojo was thought up by Zashi (Mathew Hiles) and implemented by Feesh! (Chris Sawczuk).
