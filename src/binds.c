@@ -2,13 +2,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_rotozoom.h>
-#include <SDL/SDL_gfxPrimitives.h>
-#include <SDL/SDL_ttf.h>
-#include <SDL/SDL_mixer.h>
-#include <SDL/SDL_net.h>
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_rotozoom.h>
+#include <SDL_gfxPrimitives.h>
+#include <SDL_ttf.h>
+#include <SDL_mixer.h>
+#include <SDL_net.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -324,10 +324,10 @@ int BIND_surface_create(struct lua_State *l)
 	}
 	
 	int x, y, w, h;
-	x = luaL_checkint(l, 1);
-	y = luaL_checkint(l, 2);
-	w = luaL_checkint(l, 3);
-	h = luaL_checkint(l, 4);
+	x = luaL_checkinteger(l, 1);
+	y = luaL_checkinteger(l, 2);
+	w = luaL_checkinteger(l, 3);
+	h = luaL_checkinteger(l, 4);
 	char *colour = NULL;
 	Uint32 *cols = NULL;
 	if(arg_count == 5)
@@ -404,10 +404,10 @@ int BIND_surface_fill(struct lua_State *l)
 		return 0;
 	}
 	int x, y, w, h;
-	x = luaL_checkint(l,2);	
-	y = luaL_checkint(l,3);	
-	w = luaL_checkint(l,4);	
-	h = luaL_checkint(l,5);	
+	x = luaL_checkinteger(l,2);	
+	y = luaL_checkinteger(l,3);	
+	w = luaL_checkinteger(l,4);	
+	h = luaL_checkinteger(l,5);	
 	lua_getfield(l,1,"addr");
 	
 	/*
@@ -482,16 +482,16 @@ int BIND_surface_blit(struct lua_State *l)
 	int x = 0;
 	int y = 0;
 	int alpha = 255;
-	alpha = luaL_checkint(l,-3);
+	alpha = luaL_checkinteger(l,-3);
 	if(arg_count==1 || arg_count == 2)
 	{
-		x = luaL_checkint(l,-5);
-		y = luaL_checkint(l,-4);
+		x = luaL_checkinteger(l,-5);
+		y = luaL_checkinteger(l,-4);
 	}
 	else
 	{ 
-		x = luaL_checkint(l,2);
-		y = luaL_checkint(l,3);
+		x = luaL_checkinteger(l,2);
+		y = luaL_checkinteger(l,3);
 	}
 	double rot = 0;
 	double scale = 1.0;
@@ -623,12 +623,12 @@ int BIND_surface_blit_area(struct lua_State *l)
 	int h = 0;
 	int dx = 0;
 	int dy = 0;
-	x = luaL_checkint(l,2);
-	y = luaL_checkint(l,3);
-	w = luaL_checkint(l,4);
-	h = luaL_checkint(l,5);
-	dx = luaL_checkint(l,6);
-	dy = luaL_checkint(l,7);
+	x = luaL_checkinteger(l,2);
+	y = luaL_checkinteger(l,3);
+	w = luaL_checkinteger(l,4);
+	h = luaL_checkinteger(l,5);
+	dx = luaL_checkinteger(l,6);
+	dy = luaL_checkinteger(l,7);
 	
 	if(arg_count == 8)
 	{
@@ -765,10 +765,10 @@ int BIND_draw_rect(struct lua_State *l)
 	}
 	
 	SDL_Rect pos;
-	pos.x = luaL_checkint(l,1);
-	pos.y = luaL_checkint(l,2);
-	pos.w = luaL_checkint(l,3);
-	pos.h = luaL_checkint(l,4);
+	pos.x = luaL_checkinteger(l,1);
+	pos.y = luaL_checkinteger(l,2);
+	pos.w = luaL_checkinteger(l,3);
+	pos.h = luaL_checkinteger(l,4);
 	Uint32 *cols[2];
 	if(pos.x+pos.w-1<=0)
 		return 0;
@@ -817,10 +817,10 @@ int BIND_draw_line(struct lua_State *l)
 		return 0;
 	}
 	
-	int x = luaL_checkint(l,1);
-	int y = luaL_checkint(l,2);
-	int x2 = luaL_checkint(l,3);
-	int y2 = luaL_checkint(l,4);
+	int x = luaL_checkinteger(l,1);
+	int y = luaL_checkinteger(l,2);
+	int x2 = luaL_checkinteger(l,3);
+	int y2 = luaL_checkinteger(l,4);
 	Uint32 *cols = colour_parse(l, (char*)luaL_checkstring(l,5));
 	/* It ain't pretty I know :( */
 	aalineRGBA(screen, x, y, x2, y2, cols[1], cols[2], cols[3] ,255);
@@ -838,7 +838,7 @@ int BIND_text_load(struct lua_State *l)
 		return 0;
 	}
 	char *font_name = parse_filename((char*)luaL_checkstring(l,1));
-	int size = luaL_checkint(l,2);
+	int size = luaL_checkinteger(l,2);
 	
 	TTF_Font *font = TTF_OpenFont(font_name, size);
 	free(font_name);
@@ -900,8 +900,8 @@ int BIND_text_draw(struct lua_State *l)
 		return 0;
 	}
 	
-	int x = luaL_checkint(l,2);
-	int y = luaL_checkint(l,3);
+	int x = luaL_checkinteger(l,2);
+	int y = luaL_checkinteger(l,3);
 	if(!lua_istable(l,1))
 	{
 		set_error(l,"ERROR: text_draw - Font is not a table");
@@ -955,8 +955,8 @@ int BIND_text_create(struct lua_State *l)
 	}
 	lua_getfield(l, 1, "addr");
 	TTF_Font* font = lua_touserdata(l,-1);
-	int x = luaL_checkint(l,2);
-	int y = luaL_checkint(l,3);
+	int x = luaL_checkinteger(l,2);
+	int y = luaL_checkinteger(l,3);
 	Uint32 *cols = colour_parse(l, (char*)luaL_checkstring(l,4));
 	int r = cols[1];
 	int g = cols[2];
@@ -1776,7 +1776,7 @@ int BIND_socket_tcp_send(struct lua_State *l)
 	}
 	else
 	{
-		len = luaL_checkint(l, 3);
+		len = luaL_checkinteger(l, 3);
 	}
 
 	int result = SDLNet_TCP_Send(tcpsock,data,len);
@@ -1858,7 +1858,7 @@ int BIND_socket_tcp_recv(struct lua_State *l)
 		set_error(l, "ERROR: socket_tcp_recv - Socket is invalid");
 		return 0;
 	}
-	int amount = luaL_checkint(l, 2);
+	int amount = luaL_checkinteger(l, 2);
 	char *data = malloc(amount+1);
 	memset(data, '\0', amount+1);
 	SDLNet_TCP_Recv(tcpsock, &data, amount);
@@ -2095,7 +2095,7 @@ int BIND_socket_set_check(struct lua_State *l)
 	}
 	lua_getfield(l, 1, "addr");
 	SDLNet_SocketSet socket_set = lua_touserdata(l,-1);
-	int timeout = luaL_checkint(l, 2);
+	int timeout = luaL_checkinteger(l, 2);
 
 	int numready = SDLNet_CheckSockets(socket_set, timeout);
 
@@ -2220,7 +2220,7 @@ int BIND_get_key(struct lua_State *l)
 	}
 	
 	int check;
-	check = luaL_checkint(l,1);
+	check = luaL_checkinteger(l,1);
 	
 	SDL_PumpEvents();
 	Uint8 *keystate = SDL_GetKeyState(NULL);
@@ -2234,7 +2234,7 @@ int BIND_get_mouse(struct lua_State *l)
 	int x, y, button = 0;
 	if(args>0)
 	{
-		button = luaL_checkint(l,1);	
+		button = luaL_checkinteger(l,1);	
 	}
 	SDL_PumpEvents();
 	button = SDL_GetMouseState(&x, &y)&SDL_BUTTON(button);
@@ -2262,10 +2262,10 @@ int BIND_get_joy_button(struct lua_State *l)
 	}
 	if(args == 2)
 	{
-		joystick = luaL_checkint(l, 2);
+		joystick = luaL_checkinteger(l, 2);
 	}
 
-	button = luaL_checkint(l,1);	
+	button = luaL_checkinteger(l,1);	
 	if(button > SDL_JoystickNumButtons(joy[joystick]))
 	{
 		/* set_error(l, "Joystick doesn't have that many buttons!");  Stupid error ? */
@@ -2289,9 +2289,9 @@ int BIND_get_joy_axis(struct lua_State *l)
 	}
 	if(args == 2)
 	{
-		joystick = luaL_checkint(l, 2);
+		joystick = luaL_checkinteger(l, 2);
 	}
-	int axis = luaL_checkint(l,1);
+	int axis = luaL_checkinteger(l,1);
 #ifdef GP2X
 	SDL_JoystickUpdate();
 	int button = 0;
@@ -2316,7 +2316,7 @@ int BIND_get_joy_axis_count(struct lua_State *l)
 	int joystick = 0;
 	if(args == 1)
 	{
-		joystick = luaL_checkint(l, 1);
+		joystick = luaL_checkinteger(l, 1);
 	}
 #ifdef GP2X
 	lua_pushinteger(l,SDL_JoystickNumAxes(joy[0]));
@@ -2332,7 +2332,7 @@ int BIND_get_joy_button_count(struct lua_State *l)
 	int joystick = 0;
 	if(args == 1)
 	{
-		joystick = luaL_checkint(l, 1);
+		joystick = luaL_checkinteger(l, 1);
 	}
 #ifdef GP2X
 	lua_pushinteger(l,SDL_JoystickNumButtons(joy[joystick]));

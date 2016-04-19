@@ -1,7 +1,7 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 
 int init_surfaces;				/* Allows the user to specify whether surfaces should be handled by hardware or software */
 int init_audio;					/*	Allows the user to choose whether or not audio and networking should be initialised */

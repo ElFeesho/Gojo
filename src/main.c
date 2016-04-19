@@ -3,19 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
+#include <SDL.h>
 #ifdef SDL_GFX
-#include <SDL/SDL_rotozoom.h>
-#include <SDL/SDL_gfxPrimitives.h>
+#include <SDL_rotozoom.h>
+#include <SDL_gfxPrimitives.h>
 #endif
 #ifdef SDL_TTF
-#include <SDL/SDL_ttf.h>
+#include <SDL_ttf.h>
 #endif
 #ifdef SDL_MIXER
-#include <SDL/SDL_mixer.h>
+#include <SDL_mixer.h>
 #endif
 #ifdef SDL_NET
-#include <SDL/SDL_net.h>
+#include <SDL_net.h>
 #endif
 #include <lua.h>
 #include <lualib.h>
