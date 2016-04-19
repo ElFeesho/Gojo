@@ -46,4 +46,4 @@ systems. The main goals are to run code fast and efficiently and ease of
 coding games.
 
 ## Redesign
-![Proposed Redesign](http://yuml.med4b9240c)
+![Proposed Redesign](http://yuml.me/d4b9240c)
